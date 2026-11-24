@@ -3,8 +3,11 @@ import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/app_colors.dart';
+import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
 import '../../data/demo_accounts.dart';
+import '../../data/farm_models.dart';
+import '../../data/farm_repository.dart';
 import '../../data/sample_farm_data.dart';
 import '../../shared/testing/test_id_wrapper.dart';
 import '../../shared/testing/test_ids.dart';
@@ -16,7 +19,8 @@ import 'widgets/stat_card.dart';
 import 'widgets/today_tasks_card.dart';
 import 'widgets/weather_card.dart';
 
-/// The Home tab. What it shows depends on the logged-in account.
+/// The Home tab. The fields and crops are real data; the eggs, money, weather
+/// and tasks are still sample values.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -53,11 +57,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final DemoAccount? account = context.watch<LoginController>().account;
     if (account == null) return const SizedBox.shrink();
 
+    final FarmRepository repository = context.watch<FarmRepository>();
     final FarmData data = SampleFarmData.forAccount(account.id);
     _loadTicks(data, account.id);
 
     final AppColorSet colors = context.colors;
     final DateTime now = DateTime.now();
+    final List<Field> fields = repository.fields;
+    final ({Field field, Crop crop})? harvest = repository.soonestHarvest;
+
+    // The welcome card is only for an account that has nothing at all yet.
+    final bool farmIsEmpty =
+        fields.isEmpty && data.tasks.isEmpty && data.eggsToday == 0;
 
     return Scaffold(
       body: TestId(
@@ -82,15 +93,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: <Widget>[
                   _Header(account: account, now: now),
                   const SizedBox(height: 20),
-                  if (data.isEmpty)
+                  if (farmIsEmpty)
                     EmptyFarmCard(
                       onAddFirstField: () => _openTab(_fieldsTabIndex),
                     )
                   else ...<Widget>[
-                    if (data.weather != null)
-                      WeatherCard(weather: data.weather!),
+                    WeatherCard(weather: data.weather),
                     const SizedBox(height: AppSizes.gap),
-                    _StatGrid(stats: data.stats!),
+                    _StatGrid(
+                      fields: fields.length,
+                      cropsGrowing: repository.cropCount,
+                      data: data,
+                    ),
                     const SizedBox(height: AppSizes.gap),
                     TodayTasksCard(
                       tasks: data.tasks,
@@ -98,9 +112,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       onToggle: (int i) => setState(() => _done[i] = !_done[i]),
                       onSeeAll: () => _openTab(_tasksTabIndex),
                     ),
-                    if (data.harvest != null) ...<Widget>[
+                    if (harvest != null) ...<Widget>[
                       const SizedBox(height: AppSizes.gap),
-                      HarvestSoonCard(harvest: data.harvest!),
+                      HarvestSoonCard(
+                        field: harvest.field,
+                        crop: harvest.crop,
+                        onOpen: () => context.go(
+                          AppRoutes.cropDetail(
+                            harvest.field.id,
+                            harvest.crop.id,
+                          ),
+                        ),
+                      ),
                     ],
                   ],
                 ],
@@ -253,9 +276,19 @@ class _NotificationsBell extends StatelessWidget {
 }
 
 class _StatGrid extends StatelessWidget {
-  const _StatGrid({required this.stats});
+  const _StatGrid({
+    required this.fields,
+    required this.cropsGrowing,
+    required this.data,
+  });
 
-  final FarmStats stats;
+  /// How many fields the account has right now.
+  final int fields;
+
+  /// How many crops are growing across every field.
+  final int cropsGrowing;
+
+  final FarmData data;
 
   @override
   Widget build(BuildContext context) {
@@ -270,25 +303,25 @@ class _StatGrid extends StatelessWidget {
         StatCard(
           testId: TestIds.homeStatFieldsCard,
           label: 'Fields',
-          value: '${stats.fields}',
+          value: '$fields',
           icon: Icons.grid_view_rounded,
         ),
         StatCard(
           testId: TestIds.homeStatCropsCard,
           label: 'Crops growing',
-          value: '${stats.cropsGrowing}',
+          value: '$cropsGrowing',
           icon: Icons.spa_outlined,
         ),
         StatCard(
           testId: TestIds.homeStatEggsCard,
           label: 'Eggs today',
-          value: '${stats.eggsToday}',
+          value: '${data.eggsToday}',
           icon: Icons.egg_outlined,
         ),
         StatCard(
           testId: TestIds.homeStatProfitCard,
           label: 'Profit this month',
-          value: stats.profitThisMonth,
+          value: data.profitThisMonth,
           icon: Icons.payments_outlined,
         ),
       ],

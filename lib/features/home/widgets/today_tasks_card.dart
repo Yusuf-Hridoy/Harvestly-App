@@ -58,6 +58,19 @@ class TodayTasksCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (tasks.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 4, 0, 10),
+                  child: TestId(
+                    TestIds.homeTasksEmptyText,
+                    child: Text(
+                      'No tasks for today.',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.textMuted,
+                      ),
+                    ),
+                  ),
+                ),
               for (int i = 0; i < tasks.length; i++)
                 _TaskRow(
                   number: i + 1,

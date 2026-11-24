@@ -2,24 +2,20 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../features/coming_soon/coming_soon_screen.dart';
+import '../features/crops/crop_detail_screen.dart';
+import '../features/crops/crop_form_screen.dart';
+import '../features/fields/field_detail_screen.dart';
+import '../features/fields/field_form_screen.dart';
+import '../features/fields/fields_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/login/login_controller.dart';
 import '../features/login/login_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/shell/main_tabs_shell.dart';
 import '../shared/testing/test_ids.dart';
+import 'app_routes.dart';
 
-/// Every route in Harvestly, plus the login guard.
-class AppRoutes {
-  const AppRoutes._();
-
-  static const String login = '/login';
-  static const String home = '/home';
-  static const String fields = '/fields';
-  static const String animals = '/animals';
-  static const String tasks = '/tasks';
-  static const String more = '/more';
-}
+export 'app_routes.dart';
 
 /// Builds the router.
 ///
@@ -61,19 +57,7 @@ GoRouter createAppRouter({
               ),
             ],
           ),
-          StatefulShellBranch(
-            routes: <RouteBase>[
-              GoRoute(
-                path: AppRoutes.fields,
-                builder: (BuildContext context, GoRouterState state) =>
-                    const ComingSoonScreen(
-                      testId: TestIds.fieldsComingSoonScreen,
-                      title: 'Fields',
-                      icon: Icons.grid_view_rounded,
-                    ),
-              ),
-            ],
-          ),
+          StatefulShellBranch(routes: <RouteBase>[_fieldsRoute()]),
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
@@ -114,3 +98,51 @@ GoRouter createAppRouter({
     ],
   );
 }
+
+/// The Fields tab and everything inside it.
+///
+/// These are child routes, so the tab bar stays visible and the Fields tab
+/// keeps its place when the user moves between tabs.
+GoRoute _fieldsRoute() {
+  return GoRoute(
+    path: AppRoutes.fields,
+    builder: (BuildContext context, GoRouterState state) =>
+        const FieldsScreen(),
+    routes: <RouteBase>[
+      // "new" comes first, so it is never read as a field id.
+      GoRoute(
+        path: 'new',
+        builder: (BuildContext context, GoRouterState state) =>
+            const FieldFormScreen(),
+      ),
+      GoRoute(
+        path: ':${AppRoutes.fieldIdParam}',
+        builder: (BuildContext context, GoRouterState state) =>
+            FieldDetailScreen(fieldId: _fieldId(state)),
+        routes: <RouteBase>[
+          GoRoute(
+            path: 'edit',
+            builder: (BuildContext context, GoRouterState state) =>
+                FieldFormScreen(fieldId: _fieldId(state)),
+          ),
+          GoRoute(
+            path: 'crops/new',
+            builder: (BuildContext context, GoRouterState state) =>
+                CropFormScreen(fieldId: _fieldId(state)),
+          ),
+          GoRoute(
+            path: 'crops/:${AppRoutes.cropIdParam}',
+            builder: (BuildContext context, GoRouterState state) =>
+                CropDetailScreen(
+                  fieldId: _fieldId(state),
+                  cropId: state.pathParameters[AppRoutes.cropIdParam] ?? '',
+                ),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+String _fieldId(GoRouterState state) =>
+    state.pathParameters[AppRoutes.fieldIdParam] ?? '';

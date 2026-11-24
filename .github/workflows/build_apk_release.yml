@@ -44,9 +44,15 @@ jobs:
       - name: Name the APK
         run: cp build/app/outputs/flutter-apk/app-release.apk harvestly.apk
 
+      - name: Read the version from pubspec.yaml
+        id: version
+        run: |
+          version=$(grep -m1 '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
+          echo "number=$version" >> "$GITHUB_OUTPUT"
+
       - name: Publish the release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.0-build.${{ github.run_number }}
-          name: Harvestly 0.1.0 build ${{ github.run_number }}
+          tag_name: v${{ steps.version.outputs.number }}-build.${{ github.run_number }}
+          name: Harvestly ${{ steps.version.outputs.number }} build ${{ github.run_number }}
           files: harvestly.apk

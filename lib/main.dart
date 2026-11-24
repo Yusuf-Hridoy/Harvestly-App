@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/harvestly_app.dart';
 import 'data/demo_accounts.dart';
+import 'data/farm_repository.dart';
 import 'features/login/login_controller.dart';
 import 'features/settings/theme_controller.dart';
 import 'shared/app_info/app_version_reader.dart';
@@ -28,6 +29,7 @@ Future<void> main() async {
         startAccount: savedAccount,
       ),
       themeController: ThemeController(prefs),
+      farmRepository: FarmRepository(prefs),
       appVersion: appVersion,
     ),
   );

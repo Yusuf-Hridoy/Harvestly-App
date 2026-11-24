@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../data/demo_accounts.dart';
+import '../data/farm_repository.dart';
 import '../features/login/login_controller.dart';
 import '../features/settings/theme_controller.dart';
 import '../shared/app_info/app_version_reader.dart';
@@ -15,11 +17,13 @@ class HarvestlyApp extends StatefulWidget {
     super.key,
     required this.loginController,
     required this.themeController,
+    required this.farmRepository,
     required this.appVersion,
   });
 
   final LoginController loginController;
   final ThemeController themeController;
+  final FarmRepository farmRepository;
   final AppVersion appVersion;
 
   @override
@@ -32,6 +36,32 @@ class _HarvestlyAppState extends State<HarvestlyApp> {
   );
 
   @override
+  void initState() {
+    super.initState();
+    _syncFarmData();
+    widget.loginController.addListener(_syncFarmData);
+  }
+
+  @override
+  void dispose() {
+    widget.loginController.removeListener(_syncFarmData);
+    super.dispose();
+  }
+
+  /// Keeps the loaded farm data on the account that is logged in.
+  void _syncFarmData() {
+    final DemoAccount? account = widget.loginController.account;
+    if (account == null) {
+      widget.farmRepository.closeAccount();
+    } else {
+      widget.farmRepository.openAccount(
+        email: account.email,
+        accountId: account.id,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
@@ -40,6 +70,9 @@ class _HarvestlyAppState extends State<HarvestlyApp> {
         ),
         ChangeNotifierProvider<ThemeController>.value(
           value: widget.themeController,
+        ),
+        ChangeNotifierProvider<FarmRepository>.value(
+          value: widget.farmRepository,
         ),
         Provider<AppVersion>.value(value: widget.appVersion),
       ],

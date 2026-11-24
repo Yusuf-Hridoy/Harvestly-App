@@ -4,15 +4,40 @@ import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_theme.dart';
 import '../../data/demo_accounts.dart';
+import '../../data/farm_repository.dart';
 import '../../shared/app_info/app_version_reader.dart';
 import '../../shared/testing/test_id_wrapper.dart';
 import '../../shared/testing/test_ids.dart';
+import '../../shared/widgets/app_snackbar.dart';
+import '../../shared/widgets/confirm_dialog.dart';
 import '../login/login_controller.dart';
 import 'theme_controller.dart';
 
 /// The More tab: account, appearance, app version and log out.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  Future<void> _confirmReset(BuildContext context) async {
+    final FarmRepository repository = context.read<FarmRepository>();
+    final bool confirmed = await ConfirmDialog.show(
+      context,
+      dialogTestId: TestIds.resetDataDialog,
+      title: 'Reset demo data?',
+      message:
+          'All fields and crops for this account go back to the starting '
+          'sample. You can\'t undo this.',
+      cancelLabel: 'Cancel',
+      cancelTestId: TestIds.resetDataDialogCancelButton,
+      confirmLabel: 'Reset',
+      confirmTestId: TestIds.resetDataDialogConfirmButton,
+      destructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+
+    await repository.resetToSample();
+    if (!context.mounted) return;
+    AppSnackbar.show(context, 'Demo data reset.');
+  }
 
   Future<void> _confirmLogOut(BuildContext context) async {
     final LoginController login = context.read<LoginController>();
@@ -163,6 +188,49 @@ class SettingsScreen extends StatelessWidget {
                       child: Text(version.label, style: textTheme.bodyMedium),
                     ),
                   ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _SectionTitle(text: 'Demo data', colors: colors),
+            Card(
+              child: TestId(
+                TestIds.settingsResetDataButton,
+                merge: true,
+                child: InkWell(
+                  onTap: () => _confirmReset(context),
+                  borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minHeight: AppSizes.minTapTarget,
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: <Widget>[
+                        Icon(Icons.restart_alt_rounded, color: colors.text),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                'Reset demo data',
+                                style: textTheme.bodyLarge,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Put this account's fields and crops back to "
+                                'the start.',
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),

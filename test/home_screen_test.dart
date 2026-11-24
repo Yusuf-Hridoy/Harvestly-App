@@ -112,6 +112,7 @@ void main() {
     await tester.tap(find.text('Add your first field'));
     await tester.pumpAndSettle();
 
-    expect(find.text('This part comes in a later phase.'), findsOneWidget);
+    // Phase 2 replaced the Fields placeholder with the real, empty list.
+    expect(find.text('No fields yet'), findsOneWidget);
   });
 }
