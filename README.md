@@ -168,18 +168,23 @@ again, only installed fresh.
 2. Add the four GitHub Actions secrets the release workflow reads:
    `HARVESTLY_KEYSTORE_BASE64` (the `.jks` file base64-encoded),
    `HARVESTLY_KEYSTORE_PASSWORD`, `HARVESTLY_KEY_ALIAS` and
-   `HARVESTLY_KEY_PASSWORD`. On Windows, encode the file with:
+   `HARVESTLY_KEY_PASSWORD`. In PowerShell, copy the encoded keystore to the
+   clipboard with:
 
    ```
-   certutil -encode harvestly-release.jks keystore.txt
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\dev\keys\harvestly-release.jks")) | Set-Clipboard
    ```
 
-   and paste everything between the BEGIN and END lines.
+   and paste that straight into the secret. The workflow strips spaces, tabs
+   and line endings before decoding, so the line breaks a clipboard paste adds
+   are safe. If the secret still will not decode, the build stops and says so.
 
 3. The workflow decodes the keystore into the runner's temp folder, builds
    with it, and deletes it afterwards. The job **fails before building** if
    `HARVESTLY_KEYSTORE_BASE64` is not set, so an unsigned release can never be
-   published by mistake.
+   published by mistake. It also checks that the keystore opens with the
+   password and holds the alias, and stops with a clear message if either of
+   those secrets is wrong.
 
 To check which key an APK carries:
 

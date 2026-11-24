@@ -53,8 +53,28 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.HARVESTLY_KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/harvestly-release.jks"
+          # Strip spaces, tabs and line endings first. A secret pasted from a
+          # Windows clipboard carries CRLF, and base64 --decode rejects it.
+          if ! printf '%s' "$KEYSTORE_BASE64" | tr -d '\r\n\t ' | base64 --decode > "$RUNNER_TEMP/harvestly-release.jks"; then
+            echo "The HARVESTLY_KEYSTORE_BASE64 secret is not valid base64."
+            echo "Make it again from the keystore file, in PowerShell:"
+            echo '  [Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\dev\keys\harvestly-release.jks")) | Set-Clipboard'
+            echo "Then paste it into the secret as one block, with nothing added around it."
+            rm -f "$RUNNER_TEMP/harvestly-release.jks"
+            exit 1
+          fi
           chmod 600 "$RUNNER_TEMP/harvestly-release.jks"
+
+      - name: Check the keystore password and alias
+        env:
+          HARVESTLY_KEYSTORE_PASSWORD: ${{ secrets.HARVESTLY_KEYSTORE_PASSWORD }}
+          HARVESTLY_KEY_ALIAS: ${{ secrets.HARVESTLY_KEY_ALIAS }}
+        run: |
+          if ! keytool -list -keystore "$RUNNER_TEMP/harvestly-release.jks" -storepass "$HARVESTLY_KEYSTORE_PASSWORD" -alias "$HARVESTLY_KEY_ALIAS" > /dev/null 2>&1; then
+            echo "The keystore password or alias secret is wrong."
+            rm -f "$RUNNER_TEMP/harvestly-release.jks"
+            exit 1
+          fi
 
       - name: Build the release APK
         env:
