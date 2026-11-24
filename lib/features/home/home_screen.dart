@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
+import '../../data/animal_models.dart';
 import '../../data/demo_accounts.dart';
 import '../../data/farm_models.dart';
 import '../../data/farm_repository.dart';
@@ -13,14 +14,15 @@ import '../../shared/testing/test_id_wrapper.dart';
 import '../../shared/testing/test_ids.dart';
 import '../../shared/widgets/app_snackbar.dart';
 import '../login/login_controller.dart';
+import 'widgets/animal_health_card.dart';
 import 'widgets/empty_farm_card.dart';
 import 'widgets/harvest_soon_card.dart';
 import 'widgets/stat_card.dart';
 import 'widgets/today_tasks_card.dart';
 import 'widgets/weather_card.dart';
 
-/// The Home tab. The fields and crops are real data; the eggs, money, weather
-/// and tasks are still sample values.
+/// The Home tab. The fields, crops and animals are real data; the money,
+/// weather and tasks are still sample values.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -65,10 +67,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final DateTime now = DateTime.now();
     final List<Field> fields = repository.fields;
     final ({Field field, Crop crop})? harvest = repository.soonestHarvest;
+    final ({AnimalGroup group, HealthTask task})? health = repository
+        .urgentHealthTask();
 
     // The welcome card is only for an account that has nothing at all yet.
     final bool farmIsEmpty =
-        fields.isEmpty && data.tasks.isEmpty && data.eggsToday == 0;
+        fields.isEmpty && repository.animals.isEmpty && data.tasks.isEmpty;
 
     return Scaffold(
       body: TestId(
@@ -103,6 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _StatGrid(
                       fields: fields.length,
                       cropsGrowing: repository.cropCount,
+                      eggsToday: repository.eggsToday,
                       data: data,
                     ),
                     const SizedBox(height: AppSizes.gap),
@@ -112,6 +117,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       onToggle: (int i) => setState(() => _done[i] = !_done[i]),
                       onSeeAll: () => _openTab(_tasksTabIndex),
                     ),
+                    if (health != null) ...<Widget>[
+                      const SizedBox(height: AppSizes.gap),
+                      AnimalHealthCard(
+                        group: health.group,
+                        task: health.task,
+                        onOpen: () => context.go(
+                          AppRoutes.groupDetail(health.group.id, tab: 'health'),
+                        ),
+                      ),
+                    ],
                     if (harvest != null) ...<Widget>[
                       const SizedBox(height: AppSizes.gap),
                       HarvestSoonCard(
@@ -279,6 +294,7 @@ class _StatGrid extends StatelessWidget {
   const _StatGrid({
     required this.fields,
     required this.cropsGrowing,
+    required this.eggsToday,
     required this.data,
   });
 
@@ -287,6 +303,9 @@ class _StatGrid extends StatelessWidget {
 
   /// How many crops are growing across every field.
   final int cropsGrowing;
+
+  /// How many eggs were logged today across every flock.
+  final int eggsToday;
 
   final FarmData data;
 
@@ -315,7 +334,7 @@ class _StatGrid extends StatelessWidget {
         StatCard(
           testId: TestIds.homeStatEggsCard,
           label: 'Eggs today',
-          value: '${data.eggsToday}',
+          value: '$eggsToday',
           icon: Icons.egg_outlined,
         ),
         StatCard(

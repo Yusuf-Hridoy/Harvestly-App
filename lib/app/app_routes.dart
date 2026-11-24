@@ -30,4 +30,21 @@ class AppRoutes {
   /// One crop's detail screen.
   static String cropDetail(String fieldId, String cropId) =>
       '/fields/$fieldId/crops/$cropId';
+
+  /// Add an animal group.
+  static const String groupNew = '/animals/new';
+
+  /// The route parameter and query name used inside the Animals tab.
+  static const String groupIdParam = 'groupId';
+  static const String tabQuery = 'tab';
+
+  /// One group's detail screen.
+  ///
+  /// Pass [tab] to open it on that tab, for example "health". A tab name
+  /// that does not fit the group's kind opens the first tab instead.
+  static String groupDetail(String groupId, {String? tab}) =>
+      tab == null ? '/animals/$groupId' : '/animals/$groupId?$tabQuery=$tab';
+
+  /// Edit one group.
+  static String groupEdit(String groupId) => '/animals/$groupId/edit';
 }

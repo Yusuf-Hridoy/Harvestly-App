@@ -63,7 +63,6 @@ class TestIds {
   static const String homeTasksEmptyText = 'home_tasks_empty_text';
 
   // Placeholder tabs. Fields became a real screen in Phase 2.
-  static const String animalsComingSoonScreen = 'animals_coming_soon_screen';
   static const String tasksComingSoonScreen = 'tasks_coming_soon_screen';
 
   // More tab (Settings).
@@ -252,6 +251,286 @@ class TestIds {
       'reset_data_dialog_cancel_button';
   static const String resetDataDialogConfirmButton =
       'reset_data_dialog_confirm_button';
+
+  // ================================================================ Phase 3
+
+  // Animals list.
+  static const String animalsScreen = 'animals_screen';
+  static const String animalsAddButton = 'animals_add_button';
+  static const String animalsSearchInput = 'animals_search_input';
+  static const String animalsSearchClearButton = 'animals_search_clear_button';
+  static const String animalsFilterAllChip = 'animals_filter_all_chip';
+  static const String animalsFilterBirdsChip = 'animals_filter_birds_chip';
+  static const String animalsFilterGoatsChip = 'animals_filter_goats_chip';
+  static const String animalsFilterCowsChip = 'animals_filter_cows_chip';
+  static const String animalsNoResultsText = 'animals_no_results_text';
+  static const String animalsNoResultsClearButton =
+      'animals_no_results_clear_button';
+  static const String animalsEmptyState = 'animals_empty_state';
+  static const String animalsEmptyAddButton = 'animals_empty_add_button';
+
+  /// Group card `number` in the list, counting from 1 after search and
+  /// filter.
+  static String animalsListItem(int number) => 'animals_list_item_$number';
+
+  /// The group name inside card `number`.
+  static String animalsListItemName(int number) =>
+      'animals_list_item_${number}_name_text';
+
+  /// Today's eggs or milk inside card `number`.
+  static String animalsListItemToday(int number) =>
+      'animals_list_item_${number}_today_text';
+
+  /// The health warning inside card `number`. Only there when a task is late
+  /// or due today.
+  static String animalsListItemWarning(int number) =>
+      'animals_list_item_${number}_warning_text';
+
+  // Group long-press menu.
+  static const String groupMenuSheet = 'group_menu_sheet';
+  static const String groupMenuEditOption = 'group_menu_edit_option';
+  static const String groupMenuDeleteOption = 'group_menu_delete_option';
+
+  // Group form.
+  static const String groupFormScreen = 'group_form_screen';
+  static const String groupFormTitleText = 'group_form_title_text';
+  static const String groupFormNameInput = 'group_form_name_input';
+  static const String groupFormNameErrorText = 'group_form_name_error_text';
+  static const String groupFormTypeHensChip = 'group_form_type_hens_chip';
+  static const String groupFormTypeDucksChip = 'group_form_type_ducks_chip';
+  static const String groupFormTypeQuailChip = 'group_form_type_quail_chip';
+  static const String groupFormTypeGoatsChip = 'group_form_type_goats_chip';
+  static const String groupFormTypeCowsChip = 'group_form_type_cows_chip';
+  static const String groupFormTypeErrorText = 'group_form_type_error_text';
+  static const String groupFormTypeHelpText = 'group_form_type_help_text';
+  static const String groupFormTypeLockedText = 'group_form_type_locked_text';
+  static const String groupFormCountInput = 'group_form_count_input';
+  static const String groupFormCountMinusButton =
+      'group_form_count_minus_button';
+  static const String groupFormCountPlusButton = 'group_form_count_plus_button';
+  static const String groupFormCountErrorText = 'group_form_count_error_text';
+  static const String groupFormDateInput = 'group_form_date_input';
+  static const String groupFormSaveButton = 'group_form_save_button';
+  static const String groupFormCancelButton = 'group_form_cancel_button';
+  static const String groupFormDeleteButton = 'group_form_delete_button';
+
+  // Group detail.
+  static const String groupDetailScreen = 'group_detail_screen';
+  static const String groupDetailTitleText = 'group_detail_title_text';
+  static const String groupDetailInfoText = 'group_detail_info_text';
+  static const String groupDetailEditButton = 'group_detail_edit_button';
+  static const String groupTabEggs = 'group_tab_eggs';
+  static const String groupTabMilk = 'group_tab_milk';
+  static const String groupTabHatching = 'group_tab_hatching';
+  static const String groupTabBreeding = 'group_tab_breeding';
+  static const String groupTabHealth = 'group_tab_health';
+
+  // Eggs and Milk. One set of IDs for both, so one page object serves both.
+  static const String productionTab = 'production_tab';
+  static const String productionTodayTitleText = 'production_today_title_text';
+  static const String productionTodayValueText = 'production_today_value_text';
+  static const String productionMinusButton = 'production_minus_button';
+  static const String productionPlusButton = 'production_plus_button';
+  static const String productionHintText = 'production_hint_text';
+  static const String productionRange7Option = 'production_range_7_option';
+  static const String productionRange30Option = 'production_range_30_option';
+  static const String productionChart = 'production_chart';
+  static const String productionSelectedText = 'production_selected_text';
+  static const String productionEditPastButton = 'production_edit_past_button';
+  static const String productionAverageText = 'production_average_text';
+  static const String productionRateText = 'production_rate_text';
+
+  /// Chart bar `number`, counting from the left. Bar 1 is the oldest day, so
+  /// today is bar 7 in 7-day mode and bar 30 in 30-day mode.
+  static String productionChartBar(int number) =>
+      'production_chart_bar_$number';
+
+  // Amount dialogs.
+  static const String amountDialog = 'amount_dialog';
+  static const String amountDialogInput = 'amount_dialog_input';
+  static const String amountDialogErrorText = 'amount_dialog_error_text';
+  static const String amountDialogCancelButton = 'amount_dialog_cancel_button';
+  static const String amountDialogSaveButton = 'amount_dialog_save_button';
+  static const String pastDayDialog = 'past_day_dialog';
+  static const String pastDayDialogDateInput = 'past_day_dialog_date_input';
+  static const String pastDayDialogAmountInput = 'past_day_dialog_amount_input';
+  static const String pastDayDialogErrorText = 'past_day_dialog_error_text';
+  static const String pastDayDialogCancelButton =
+      'past_day_dialog_cancel_button';
+  static const String pastDayDialogSaveButton = 'past_day_dialog_save_button';
+
+  // Hatching tab.
+  static const String hatchingTab = 'hatching_tab';
+  static const String hatchingNewBatchButton = 'hatching_new_batch_button';
+  static const String hatchingEmptyText = 'hatching_empty_text';
+
+  /// Active batch card `number`, newest start first.
+  static String hatchingBatchItem(int number) => 'hatching_batch_item_$number';
+
+  /// "Batch 3" inside active batch card `number`.
+  static String hatchingBatchItemTitle(int number) =>
+      'hatching_batch_item_${number}_title_text';
+
+  /// "Day 14 of 21" inside active batch card `number`.
+  static String hatchingBatchItemDayChip(int number) =>
+      'hatching_batch_item_${number}_day_chip';
+
+  /// Record result inside active batch card `number`.
+  static String hatchingBatchItemRecordButton(int number) =>
+      'hatching_batch_item_${number}_record_button';
+
+  /// Past batch row `number`, newest result first.
+  static String hatchingPastItem(int number) => 'hatching_past_item_$number';
+
+  /// The hatch rate inside past batch row `number`.
+  static String hatchingPastItemRate(int number) =>
+      'hatching_past_item_${number}_rate_text';
+
+  // Breeding tab.
+  static const String breedingTab = 'breeding_tab';
+  static const String breedingNewButton = 'breeding_new_button';
+  static const String breedingEmptyText = 'breeding_empty_text';
+
+  /// Active pregnancy card `number`, soonest due first.
+  static String breedingItem(int number) => 'breeding_item_$number';
+
+  /// "Lali · pregnant" inside pregnancy card `number`.
+  static String breedingItemTitle(int number) =>
+      'breeding_item_${number}_title_text';
+
+  /// "47 days left" inside pregnancy card `number`.
+  static String breedingItemDaysChip(int number) =>
+      'breeding_item_${number}_days_chip';
+
+  /// Record birth inside pregnancy card `number`.
+  static String breedingItemRecordButton(int number) =>
+      'breeding_item_${number}_record_button';
+
+  /// Past birth row `number`, newest first.
+  static String breedingPastItem(int number) => 'breeding_past_item_$number';
+
+  /// "1 calf" inside past birth row `number`.
+  static String breedingPastItemYoung(int number) =>
+      'breeding_past_item_${number}_young_text';
+
+  /// The timeline inside a batch or pregnancy card, for example
+  /// `hatching_batch_item_1_timeline`.
+  static String timeline(String cardId) => '${cardId}_timeline';
+
+  /// Step `step` of that timeline, counting from 1 in date order.
+  static String timelineStep(String cardId, int step) =>
+      '${cardId}_timeline_step_$step';
+
+  /// The Today dot on that timeline. It is missing when today falls on a
+  /// milestone, because that milestone becomes the Today dot instead.
+  static String timelineTodayMarker(String cardId) =>
+      '${cardId}_timeline_today_marker';
+
+  // Batch form and hatch result.
+  static const String batchFormScreen = 'batch_form_screen';
+  static const String batchFormDateInput = 'batch_form_date_input';
+  static const String batchFormEggsInput = 'batch_form_eggs_input';
+  static const String batchFormEggsMinusButton = 'batch_form_eggs_minus_button';
+  static const String batchFormEggsPlusButton = 'batch_form_eggs_plus_button';
+  static const String batchFormEggsErrorText = 'batch_form_eggs_error_text';
+  static const String batchFormSaveButton = 'batch_form_save_button';
+  static const String batchFormCancelButton = 'batch_form_cancel_button';
+  static const String hatchResultDialog = 'hatch_result_dialog';
+  static const String hatchResultDialogInput = 'hatch_result_dialog_input';
+  static const String hatchResultDialogErrorText =
+      'hatch_result_dialog_error_text';
+  static const String hatchResultDialogCancelButton =
+      'hatch_result_dialog_cancel_button';
+  static const String hatchResultDialogSaveButton =
+      'hatch_result_dialog_save_button';
+
+  // Pregnancy form and birth.
+  static const String pregnancyFormScreen = 'pregnancy_form_screen';
+  static const String pregnancyFormNameInput = 'pregnancy_form_name_input';
+  static const String pregnancyFormNameErrorText =
+      'pregnancy_form_name_error_text';
+  static const String pregnancyFormDateInput = 'pregnancy_form_date_input';
+  static const String pregnancyFormSaveButton = 'pregnancy_form_save_button';
+  static const String pregnancyFormCancelButton =
+      'pregnancy_form_cancel_button';
+  static const String birthDialog = 'birth_dialog';
+  static const String birthDialogYoungInput = 'birth_dialog_young_input';
+  static const String birthDialogYoungErrorText =
+      'birth_dialog_young_error_text';
+  static const String birthDialogDateInput = 'birth_dialog_date_input';
+  static const String birthDialogCancelButton = 'birth_dialog_cancel_button';
+  static const String birthDialogSaveButton = 'birth_dialog_save_button';
+
+  // Health tab.
+  static const String healthTab = 'health_tab';
+  static const String healthCountTitleText = 'health_count_title_text';
+  static const String healthCountValueText = 'health_count_value_text';
+  static const String healthRecordLossButton = 'health_record_loss_button';
+  static const String healthAddTaskButton = 'health_add_task_button';
+  static const String healthTasksEmptyText = 'health_tasks_empty_text';
+  static const String healthHistoryEmptyText = 'health_history_empty_text';
+
+  /// Open task `number`, in the order the tab shows them.
+  static String healthTaskItem(int number) => 'health_task_item_$number';
+
+  /// The task name inside open task `number`.
+  static String healthTaskItemTitle(int number) =>
+      'health_task_item_${number}_title_text';
+
+  /// "Late by 4 days" inside open task `number`.
+  static String healthTaskItemState(int number) =>
+      'health_task_item_${number}_state_text';
+
+  /// Done inside open task `number`.
+  static String healthTaskItemDoneButton(int number) =>
+      'health_task_item_${number}_done_button';
+
+  /// History line `number`, newest first.
+  static String healthHistoryItem(int number) => 'health_history_item_$number';
+
+  // Health task form and loss dialog.
+  static const String taskFormScreen = 'task_form_screen';
+  static const String taskFormTitleInput = 'task_form_title_input';
+  static const String taskFormTitleErrorText = 'task_form_title_error_text';
+  static const String taskFormDateInput = 'task_form_date_input';
+  static const String taskFormSaveButton = 'task_form_save_button';
+  static const String taskFormCancelButton = 'task_form_cancel_button';
+  static const String lossDialog = 'loss_dialog';
+  static const String lossDialogAmountInput = 'loss_dialog_amount_input';
+  static const String lossDialogAmountErrorText =
+      'loss_dialog_amount_error_text';
+  static const String lossDialogReasonPicker = 'loss_dialog_reason_picker';
+  static const String lossDialogReasonOptionSickness =
+      'loss_dialog_reason_option_sickness';
+  static const String lossDialogReasonOptionPredator =
+      'loss_dialog_reason_option_predator';
+  static const String lossDialogReasonOptionAccident =
+      'loss_dialog_reason_option_accident';
+  static const String lossDialogReasonOptionSold =
+      'loss_dialog_reason_option_sold';
+  static const String lossDialogReasonOptionOther =
+      'loss_dialog_reason_option_other';
+  static const String lossDialogReasonErrorText =
+      'loss_dialog_reason_error_text';
+  static const String lossDialogDateInput = 'loss_dialog_date_input';
+  static const String lossDialogCancelButton = 'loss_dialog_cancel_button';
+  static const String lossDialogSaveButton = 'loss_dialog_save_button';
+
+  // Delete group dialog.
+  static const String deleteGroupDialog = 'delete_group_dialog';
+  static const String deleteGroupDialogMessageText =
+      'delete_group_dialog_message_text';
+  static const String deleteGroupDialogCancelButton =
+      'delete_group_dialog_cancel_button';
+  static const String deleteGroupDialogConfirmButton =
+      'delete_group_dialog_confirm_button';
+
+  // Home, animal health card.
+  static const String homeAnimalHealthCard = 'home_animal_health_card';
+  static const String homeAnimalHealthTitleText =
+      'home_animal_health_title_text';
+  static const String homeAnimalHealthStateText =
+      'home_animal_health_state_text';
 
   // Shared.
   static const String appSnackbarText = 'app_snackbar_text';

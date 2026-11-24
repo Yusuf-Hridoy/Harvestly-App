@@ -9,10 +9,19 @@ import 'app_snackbar.dart';
 /// It sends the user back to the Fields list with a snackbar, which is what
 /// a deep link into deleted data should do.
 class MissingItemScreen extends StatefulWidget {
-  const MissingItemScreen({super.key, required this.message});
+  const MissingItemScreen({
+    super.key,
+    required this.message,
+    this.goTo = AppRoutes.fields,
+  });
 
-  /// "That field no longer exists." or "That crop no longer exists."
+  /// "That field no longer exists.", "That crop no longer exists." or
+  /// "That animal group no longer exists."
   final String message;
+
+  /// The list to send the user back to. Fields by default, Animals for a
+  /// group that is gone.
+  final String goTo;
 
   @override
   State<MissingItemScreen> createState() => _MissingItemScreenState();
@@ -24,7 +33,7 @@ class _MissingItemScreenState extends State<MissingItemScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.go(AppRoutes.fields);
+      context.go(widget.goTo);
       AppSnackbar.show(context, widget.message);
     });
   }

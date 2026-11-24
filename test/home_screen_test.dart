@@ -1,9 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:harvestly/data/animal_models.dart';
 import 'package:harvestly/data/demo_accounts.dart';
 import 'package:harvestly/features/home/widgets/empty_farm_card.dart';
 import 'package:harvestly/features/home/widgets/harvest_soon_card.dart';
 import 'package:harvestly/features/home/widgets/stat_card.dart';
 import 'package:harvestly/features/home/widgets/weather_card.dart';
+import 'package:harvestly/shared/logic/app_clock.dart';
+import 'package:harvestly/shared/testing/test_ids.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'helpers/pump_harvestly_app.dart';
@@ -114,5 +117,121 @@ void main() {
 
     // Phase 2 replaced the Fields placeholder with the real, empty list.
     expect(find.text('No fields yet'), findsOneWidget);
+  });
+  group('animals on Home', () {
+    setUp(() => AppClock.useFixed(DateTime(2026, 11, 24)));
+    tearDown(AppClock.useRealClock);
+
+    testWidgets('Eggs today adds up every flock\'s log for today', (
+      WidgetTester tester,
+    ) async {
+      await pumpHarvestlyApp(tester, startAccount: DemoAccounts.farmer);
+
+      // Flock A logged 18 and the duck pond 4.
+      expect(
+        find.descendant(
+          of: byTestId(TestIds.homeStatEggsCard),
+          matching: find.text('22'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the poultry account has its own eggs count', (
+      WidgetTester tester,
+    ) async {
+      await pumpHarvestlyApp(tester, startAccount: DemoAccounts.poultry);
+
+      expect(
+        find.descendant(
+          of: byTestId(TestIds.homeStatEggsCard),
+          matching: find.text('26'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the animal health card shows the most late task', (
+      WidgetTester tester,
+    ) async {
+      await pumpHarvestlyApp(tester, startAccount: DemoAccounts.farmer);
+
+      expect(byTestId(TestIds.homeAnimalHealthCard), findsOneWidget);
+      expect(
+        textOfTestId(tester, TestIds.homeAnimalHealthTitleText),
+        'Foot-and-mouth vaccine · Cow shed',
+      );
+      expect(
+        textOfTestId(tester, TestIds.homeAnimalHealthStateText),
+        'Late by 4 days',
+      );
+    });
+
+    testWidgets('with nothing late it shows the next task inside a week', (
+      WidgetTester tester,
+    ) async {
+      await pumpHarvestlyApp(tester, startAccount: DemoAccounts.poultry);
+
+      expect(
+        textOfTestId(tester, TestIds.homeAnimalHealthTitleText),
+        'Fowl pox vaccine · Backyard flock',
+      );
+      expect(
+        textOfTestId(tester, TestIds.homeAnimalHealthStateText),
+        'Coming up · 27 Nov 2026',
+      );
+    });
+
+    testWidgets('tapping the card opens that group on its Health tab', (
+      WidgetTester tester,
+    ) async {
+      await pumpHarvestlyApp(tester, startAccount: DemoAccounts.farmer);
+
+      await tester.tap(byTestId(TestIds.homeAnimalHealthCard));
+      await tester.pumpAndSettle();
+
+      expect(textOfTestId(tester, TestIds.groupDetailTitleText), 'Cow shed');
+      expect(byTestId(TestIds.healthTab), findsOneWidget);
+      expect(
+        textOfTestId(tester, TestIds.healthTaskItemTitle(1)),
+        'Foot-and-mouth vaccine',
+      );
+    });
+
+    testWidgets('the card hides when nothing needs attention soon', (
+      WidgetTester tester,
+    ) async {
+      final TestAppParts parts = await pumpHarvestlyApp(
+        tester,
+        startAccount: DemoAccounts.poultry,
+      );
+
+      await parts.farm.markTaskDone(groupId: 'group-1', taskId: 'task-1');
+      await tester.pumpAndSettle();
+
+      expect(byTestId(TestIds.homeAnimalHealthCard), findsNothing);
+    });
+
+    testWidgets('the welcome card needs no fields, no groups and no tasks', (
+      WidgetTester tester,
+    ) async {
+      final TestAppParts parts = await pumpHarvestlyApp(
+        tester,
+        startAccount: DemoAccounts.newFarm,
+      );
+
+      expect(find.byType(EmptyFarmCard), findsOneWidget);
+
+      await parts.farm.addGroup(
+        name: 'First flock',
+        type: AnimalType.hens,
+        count: 6,
+        startedOn: AppClock.today(),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EmptyFarmCard), findsNothing);
+      expect(find.byType(WeatherCard), findsOneWidget);
+    });
   });
 }

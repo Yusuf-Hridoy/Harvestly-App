@@ -1,7 +1,7 @@
 # Harvestly
 
-Harvestly is a small farm manager app for Android: fields, crops, hens and eggs,
-tasks and money. It is a practice app for mobile test automation with Appium,
+Harvestly is a small farm manager app for Android: fields, crops, flocks and
+herds, eggs and milk, tasks and money. It is a practice app for mobile test automation with Appium,
 not a real product. Every element a test needs has a stable test ID.
 
 ## Screenshots
@@ -18,6 +18,13 @@ not a real product. Every element a test needs has a stable test ID.
 | Add crop | ![Add crop, light](docs/screenshots/add-crop-light.png) | ![Add crop, dark](docs/screenshots/add-crop-dark.png) |
 | Crop detail | ![Crop detail, light](docs/screenshots/crop-detail-light.png) | ![Crop detail, dark](docs/screenshots/crop-detail-dark.png) |
 | Harvest dialog | ![Harvest dialog, light](docs/screenshots/harvest-dialog-light.png) | ![Harvest dialog, dark](docs/screenshots/harvest-dialog-dark.png) |
+| Animals list | ![Animals list, light](docs/screenshots/animals-list-light.png) | ![Animals list, dark](docs/screenshots/animals-list-dark.png) |
+| Group form with errors | ![Group form with errors, light](docs/screenshots/group-form-light.png) | ![Group form with errors, dark](docs/screenshots/group-form-dark.png) |
+| Eggs tab | ![Eggs tab, light](docs/screenshots/eggs-tab-light.png) | ![Eggs tab, dark](docs/screenshots/eggs-tab-dark.png) |
+| Hatching tab | ![Hatching tab, light](docs/screenshots/hatching-tab-light.png) | ![Hatching tab, dark](docs/screenshots/hatching-tab-dark.png) |
+| Health tab | ![Health tab, light](docs/screenshots/health-tab-light.png) | ![Health tab, dark](docs/screenshots/health-tab-dark.png) |
+| Milk tab | ![Milk tab, light](docs/screenshots/milk-tab-light.png) | ![Milk tab, dark](docs/screenshots/milk-tab-dark.png) |
+| Breeding tab | ![Breeding tab, light](docs/screenshots/breeding-tab-light.png) | ![Breeding tab, dark](docs/screenshots/breeding-tab-dark.png) |
 
 ## Download the app
 
@@ -62,6 +69,42 @@ has a type from a list of 40, a planting date and a number of plants.
   a crop yet: delete it and add it again.
 - Everything is saved on the phone, one record per account, so it survives
   closing the app. There is still no backend and no network call.
+
+## Animals
+
+The Animals tab holds flocks and herds. A flock of hens, ducks or quail tracks
+eggs, hatching and health. A herd of goats or cows tracks milk, breeding and
+health. One screen serves both: only the three tabs change.
+
+- The list can be searched by name and filtered by All, Birds, Goats or Cows,
+  with live counts. A long press on a card offers Edit group and Delete group.
+  The animal type is fixed once a group is made.
+- **Eggs and Milk** keep one amount per day. Tap − or + to move by 1 egg or
+  0.5 litres, long press for 10 or 5, or tap the big number to type an amount.
+  The chart shows the last 7 or 30 days; tap a bar to read that day, and use
+  Edit a past day to fix one you missed.
+- **Hatching** counts a batch of eggs from day 1 to hatch day (21 days for
+  hens, 28 for ducks, 17 for quail) with a timeline of set eggs, candling,
+  stop turning and hatch day. Record result moves it to Past batches with its
+  hatch rate.
+- **Breeding** counts a pregnancy to its due date (150 days for goats, 283 for
+  cows) with a timeline of mated, check, dry off and due. Record birth moves
+  it to Past births.
+- **Health** shows how many animals are left, the open tasks in the order they
+  need doing (late first, then due today, then coming up), and a history of
+  done tasks and losses. Record loss takes animals off the count.
+- Home adds up today's eggs across every flock and shows the one health task
+  that needs attention most.
+
+## Safe upgrades
+
+Saved data carries a version number. When the app meets data from an older
+version it upgrades it in place, keeping everything the user had. If it meets
+data it cannot read at all, it copies that data to a backup key and starts the
+account from the sample, so a bad save can never show an empty farm.
+
+The upgrade from Phase 2 to Phase 3 was run on a real emulator and written up
+in [docs/upgrade-test.md](docs/upgrade-test.md).
 
 ## Run it yourself
 
@@ -116,6 +159,15 @@ Things worth knowing before you write tests:
   days-left numbers are the same on every run.
 - The crop list in Add crop is long and only the rows on screen are in the UI
   tree. Search for the crop first, then tap it.
+- A **long press** on + or − in Eggs or Milk is the only way to move by 10
+  eggs or 5 litres. A tap moves by 1 or 0.5.
+- The 30-day chart scrolls sideways and opens at today, so the oldest bars are
+  not in the UI tree until you scroll it.
+- `home_animal_health_card` sits low on Home. Scroll down before looking for
+  the text inside it, or Android hands back a clipped card with no children.
+- Every tab of a group keeps its own scroll position, and the URL follows the
+  tab, so `/animals/<id>?tab=health` opens straight on Health.
+- **Reset demo data** now puts the animal groups back as well as the fields.
 
 Saved UI tree dumps for each screen are in `docs/ui-dumps/`.
 
@@ -125,34 +177,40 @@ Saved UI tree dumps for each screen are in `docs/ui-dumps/`.
 lib/
   main.dart                  app start: loads saved settings, runs the app
   app/                       MaterialApp, router, colors, themes
-  data/                      the 3 demo accounts, the crop catalog, the saved
-                             farm data and the starting sample
+  data/                      the 3 demo accounts, the crop catalog, the animal
+                             rules, the saved farm data with its version and
+                             migration, and the starting sample
   features/
     login/                   login screen and its controller
     fields/                  the Fields tab, the field form, field detail and
                              the drawn map
     crops/                   add a crop, crop detail and the harvest dialog
+    animals/                 the Animals tab, the group form, group detail and
+                             its Eggs, Milk, Hatching, Breeding and Health tabs
     shell/                   the bottom tab bar around the 5 tabs
     home/                    home screen and its cards
-    coming_soon/             placeholder for Fields, Animals and Tasks
+    coming_soon/             placeholder for Tasks, the last one left
     settings/                the More tab and the theme choice
   shared/
     session/                 remember me and the logged-in account
-    logic/                   today's date, crop growth and field area maths
+    logic/                   today's date, date text, crop growth and field
+                             area maths
     testing/                 the TestId wrapper and every test ID
-    widgets/                 the shared snackbar
+    widgets/                 the shared snackbar, confirm dialog, discard
+                             guard, stage chip and missing item screen
     app_info/                reads the app version from the build
 assets/fonts/                Inter and Space Grotesk, with their licences
 test/                        widget tests
 docs/screenshots/            the screenshots above
 docs/ui-dumps/               Android UI tree dumps, one per screen
+docs/upgrade-test.md         how the Phase 2 to Phase 3 upgrade was checked
 ```
 
 ## Roadmap
 
 - Phase 1 - Foundation (done)
 - Phase 2 - Fields and crops (done)
-- Phase 3 - Animals and poultry
+- Phase 3 - Animals and poultry (done)
 - Phase 4 - Tasks and reminders
 - Phase 5 - Camera and diary
 - Phase 6 - Money, weather and offline

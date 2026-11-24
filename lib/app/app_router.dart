@@ -1,6 +1,9 @@
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../features/animals/animals_screen.dart';
+import '../features/animals/group_detail_screen.dart';
+import '../features/animals/group_form_screen.dart';
 import '../features/coming_soon/coming_soon_screen.dart';
 import '../features/crops/crop_detail_screen.dart';
 import '../features/crops/crop_form_screen.dart';
@@ -58,19 +61,7 @@ GoRouter createAppRouter({
             ],
           ),
           StatefulShellBranch(routes: <RouteBase>[_fieldsRoute()]),
-          StatefulShellBranch(
-            routes: <RouteBase>[
-              GoRoute(
-                path: AppRoutes.animals,
-                builder: (BuildContext context, GoRouterState state) =>
-                    const ComingSoonScreen(
-                      testId: TestIds.animalsComingSoonScreen,
-                      title: 'Animals',
-                      icon: Icons.egg_rounded,
-                    ),
-              ),
-            ],
-          ),
+          StatefulShellBranch(routes: <RouteBase>[_animalsRoute()]),
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
@@ -144,5 +135,43 @@ GoRoute _fieldsRoute() {
   );
 }
 
+/// The Animals tab and everything inside it.
+///
+/// Like the Fields tab, these are child routes, so the tab bar stays visible
+/// and the Animals tab keeps its place.
+GoRoute _animalsRoute() {
+  return GoRoute(
+    path: AppRoutes.animals,
+    builder: (BuildContext context, GoRouterState state) =>
+        const AnimalsScreen(),
+    routes: <RouteBase>[
+      // "new" comes first, so it is never read as a group id.
+      GoRoute(
+        path: 'new',
+        builder: (BuildContext context, GoRouterState state) =>
+            const GroupFormScreen(),
+      ),
+      GoRoute(
+        path: ':${AppRoutes.groupIdParam}',
+        builder: (BuildContext context, GoRouterState state) =>
+            GroupDetailScreen(
+              groupId: _groupId(state),
+              tab: state.uri.queryParameters[AppRoutes.tabQuery],
+            ),
+        routes: <RouteBase>[
+          GoRoute(
+            path: 'edit',
+            builder: (BuildContext context, GoRouterState state) =>
+                GroupFormScreen(groupId: _groupId(state)),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 String _fieldId(GoRouterState state) =>
     state.pathParameters[AppRoutes.fieldIdParam] ?? '';
+
+String _groupId(GoRouterState state) =>
+    state.pathParameters[AppRoutes.groupIdParam] ?? '';
