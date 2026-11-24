@@ -38,8 +38,35 @@ jobs:
       - name: Test
         run: flutter test
 
+      - name: Check the signing secret is there
+        env:
+          KEYSTORE_BASE64: ${{ secrets.HARVESTLY_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "The HARVESTLY_KEYSTORE_BASE64 secret is not set."
+            echo "A release has to be signed with the real release key, so this build stops here."
+            echo "See the Signing part of the README."
+            exit 1
+          fi
+
+      - name: Put the release keystore in place
+        env:
+          KEYSTORE_BASE64: ${{ secrets.HARVESTLY_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/harvestly-release.jks"
+          chmod 600 "$RUNNER_TEMP/harvestly-release.jks"
+
       - name: Build the release APK
+        env:
+          HARVESTLY_KEYSTORE_PATH: ${{ runner.temp }}/harvestly-release.jks
+          HARVESTLY_KEYSTORE_PASSWORD: ${{ secrets.HARVESTLY_KEYSTORE_PASSWORD }}
+          HARVESTLY_KEY_ALIAS: ${{ secrets.HARVESTLY_KEY_ALIAS }}
+          HARVESTLY_KEY_PASSWORD: ${{ secrets.HARVESTLY_KEY_PASSWORD }}
         run: flutter build apk --release
+
+      - name: Remove the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/harvestly-release.jks"
 
       - name: Name the APK
         run: cp build/app/outputs/flutter-apk/app-release.apk harvestly.apk

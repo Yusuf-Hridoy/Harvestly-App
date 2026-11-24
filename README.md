@@ -126,7 +126,68 @@ On Windows:
 6. Run `flutter run`.
 
 To build the APK yourself: `flutter build apk --release`. The file lands in
-`build/app/outputs/flutter-apk/app-release.apk`.
+`build/app/outputs/flutter-apk/app-release.apk`. Without a release key that
+APK is signed with the debug key and is fine for trying the app out, but it
+cannot be installed over a published release. See **Signing** below.
+
+## Signing
+
+For maintainers. Every published release must be signed with the same key, or
+Android will not let people update: it refuses an APK whose signer differs
+from the one already on the phone.
+
+Release builds take the key from `android/key.properties` if that file is
+there:
+
+```
+storeFile=C:/keys/harvestly-release.jks
+storePassword=...
+keyAlias=harvestly
+keyPassword=...
+```
+
+Otherwise they take it from the environment variables
+`HARVESTLY_KEYSTORE_PATH`, `HARVESTLY_KEYSTORE_PASSWORD`,
+`HARVESTLY_KEY_ALIAS` and `HARVESTLY_KEY_PASSWORD`. Use an absolute path for
+the keystore. With neither, the build falls back to the debug key and prints a
+warning starting with `Harvestly signing:`.
+
+The keystore, `key.properties` and any `*.jks` or `*.keystore` file are
+git-ignored. Keep the keystore and its passwords outside the repository and
+back them up somewhere safe: lose the key and the app can never be updated
+again, only installed fresh.
+
+### Setting it up once
+
+1. Make the key:
+
+   ```
+   keytool -genkeypair -v -keystore harvestly-release.jks -storetype JKS      -keyalg RSA -keysize 2048 -validity 10000 -alias harvestly
+   ```
+
+2. Add the four GitHub Actions secrets the release workflow reads:
+   `HARVESTLY_KEYSTORE_BASE64` (the `.jks` file base64-encoded),
+   `HARVESTLY_KEYSTORE_PASSWORD`, `HARVESTLY_KEY_ALIAS` and
+   `HARVESTLY_KEY_PASSWORD`. On Windows, encode the file with:
+
+   ```
+   certutil -encode harvestly-release.jks keystore.txt
+   ```
+
+   and paste everything between the BEGIN and END lines.
+
+3. The workflow decodes the keystore into the runner's temp folder, builds
+   with it, and deletes it afterwards. The job **fails before building** if
+   `HARVESTLY_KEYSTORE_BASE64` is not set, so an unsigned release can never be
+   published by mistake.
+
+To check which key an APK carries:
+
+```
+apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk
+```
+
+The `SHA-256 digest` it prints must be the same for every release.
 
 ## For testers
 

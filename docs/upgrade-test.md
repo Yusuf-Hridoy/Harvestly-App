@@ -81,30 +81,47 @@ Nothing was lost, nothing had to be set up again, and no empty farm appeared.
 
 ## Note on signing, and which APK was used
 
-The GitHub release APK could not be installed over, and the other way round
-either:
+When this test was first run, neither APK could be installed over the other:
 
 ```
 INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package com.harvestly.app
 signatures do not match newer version; ignoring!
 ```
 
-`android/app/build.gradle.kts` still signs release builds with the **debug**
-key (`signingConfig = signingConfigs.getByName("debug")`, with the `TODO` from
-`flutter create` above it). Every machine has its own debug keystore, so the
-APK built by GitHub Actions and an APK built here are signed by different
-keys, and Android refuses to treat one as an update of the other.
+The cause was the release signing config. `android/app/build.gradle.kts` signed
+release builds with the **debug** key, and a debug key is not a fixed key: the
+Android tools make a new one on any machine that does not already have
+`~/.android/debug.keystore`. A GitHub Actions runner is a fresh machine every
+time, so every CI build was signed by a different key, and Android would not
+treat any of them as an update of the one before. The same went for an APK
+built here against one built by CI.
 
 So the Phase 2 side of this test was built from the Phase 2 commit itself
-(`63bb794`, `version: 0.2.0+2`) on this machine, which puts both APKs under
-the same key. The saved data and the migration path are identical either way:
-what Phase 2 writes does not depend on who signed it.
+(`63bb794`, `version: 0.2.0+2`) on this machine, which put both APKs under one
+key. The saved data and the migration path are the same either way: what
+Phase 2 writes does not depend on who signed it.
 
 The release APK from
 `https://github.com/Yusuf-Hridoy/Harvestly-App/releases/download/v0.2.0-build.2/harvestly.apk`
 was downloaded first and is kept outside the repository. It was installed and
 checked by hand as well, and it saves the same Phase 2 data.
 
-For a real user this does not come up, because both the old and the new APK on
-their phone come from the same release pipeline. It will stop being an issue
-for us too once the app gets a proper release keystore.
+### The fix
+
+Release builds now use one fixed key. `android/app/build.gradle.kts` reads it
+from `android/key.properties` if that file is there, and otherwise from the
+environment variables `HARVESTLY_KEYSTORE_PATH`,
+`HARVESTLY_KEYSTORE_PASSWORD`, `HARVESTLY_KEY_ALIAS` and
+`HARVESTLY_KEY_PASSWORD`. The release workflow decodes the keystore from the
+`HARVESTLY_KEYSTORE_BASE64` secret and passes those four values in, and the
+job stops before building if the secret is missing. If no key is found at all
+the build still works, falls back to the debug key, and prints a Gradle
+warning starting with `Harvestly signing:` saying the APK must not be
+published.
+
+The keystore, `key.properties` and any `*.jks` or `*.keystore` file are
+git-ignored and never go in the repository. See the **Signing** part of the
+README.
+
+From the next release on, a published APK can be installed straight over the
+one before it, so this test no longer needs a locally rebuilt old APK.
