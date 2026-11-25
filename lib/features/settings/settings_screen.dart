@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
@@ -5,12 +7,14 @@ import '../../app/app_colors.dart';
 import '../../app/app_theme.dart';
 import '../../data/demo_accounts.dart';
 import '../../data/farm_repository.dart';
+import '../../notifications/notification_service.dart';
 import '../../shared/app_info/app_version_reader.dart';
 import '../../shared/testing/test_id_wrapper.dart';
 import '../../shared/testing/test_ids.dart';
 import '../../shared/widgets/app_snackbar.dart';
 import '../../shared/widgets/confirm_dialog.dart';
 import '../login/login_controller.dart';
+import '../tasks/task_form_screen.dart';
 import 'theme_controller.dart';
 
 /// The More tab: account, appearance, app version and log out.
@@ -143,6 +147,9 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 20),
+            _SectionTitle(text: 'Notifications', colors: colors),
+            const _NotificationsSection(),
             const SizedBox(height: 20),
             _SectionTitle(text: 'Appearance', colors: colors),
             Card(
@@ -318,6 +325,193 @@ class _ThemeOption extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The Notifications part of Settings.
+///
+/// It reads Android's real answer every time the app comes back to the
+/// front, so returning from Android's settings page shows the new state at
+/// once, with no restart.
+class _NotificationsSection extends StatefulWidget {
+  const _NotificationsSection();
+
+  static const String allowedTitle = 'Notifications are on';
+  static const String allowedBody = 'Task reminders will show on this phone.';
+  static const String offTitle = 'Notifications are off';
+  static const String offBody =
+      "Reminders can't show until you allow them in Android settings.";
+  static const String notAskedTitle = 'Notifications are not set up yet';
+  static const String notAskedBody =
+      "You'll be asked the first time you add a reminder.";
+  static const String testSent = 'Test notification on its way.';
+
+  @override
+  State<_NotificationsSection> createState() => _NotificationsSectionState();
+}
+
+class _NotificationsSectionState extends State<_NotificationsSection>
+    with WidgetsBindingObserver {
+  NotificationPermission? _state;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _read();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _read();
+  }
+
+  Future<void> _read() async {
+    final NotificationService service = context.read<NotificationService>();
+    final NotificationPermission found = await service.permission();
+    if (!mounted) return;
+    setState(() => _state = found);
+  }
+
+  Future<void> _openAndroidSettings() async {
+    await context.read<NotificationService>().openAndroidSettings();
+  }
+
+  Future<void> _sendTest() async {
+    final NotificationService service = context.read<NotificationService>();
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+
+    final bool allowed = await TaskFormScreen.askForNotifications(context);
+    if (mounted) await _read();
+    if (!allowed) {
+      AppSnackbar.showOn(messenger, TaskFormScreen.remindersOffMessage);
+      return;
+    }
+
+    AppSnackbar.showOn(messenger, _NotificationsSection.testSent);
+    // The wait happens here, inside the app. Closing the app before it is
+    // over means nothing is sent, which is written up in test_ids.md.
+    unawaited(service.sendTest());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppColorSet colors = context.colors;
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final NotificationPermission state =
+        _state ?? NotificationPermission.notAsked;
+    final bool off = state == NotificationPermission.off;
+
+    final String title;
+    final String body;
+    switch (state) {
+      case NotificationPermission.allowed:
+        title = _NotificationsSection.allowedTitle;
+        body = _NotificationsSection.allowedBody;
+      case NotificationPermission.off:
+        title = _NotificationsSection.offTitle;
+        body = _NotificationsSection.offBody;
+      case NotificationPermission.notAsked:
+        title = _NotificationsSection.notAskedTitle;
+        body = _NotificationsSection.notAskedBody;
+    }
+
+    return TestId(
+      TestIds.settingsNotificationsCard,
+      container: true,
+      child: Card(
+        child: Column(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(
+                    state == NotificationPermission.allowed
+                        ? Icons.notifications_active_outlined
+                        : Icons.notifications_off_outlined,
+                    color: off ? colors.warningText : colors.text,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        TestId(
+                          TestIds.settingsNotificationsStateText,
+                          child: Text(
+                            title,
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: off ? colors.warningText : colors.text,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          body,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colors.textMuted,
+                          ),
+                        ),
+                        if (off) ...<Widget>[
+                          const SizedBox(height: 12),
+                          TestId(
+                            TestIds.settingsOpenAndroidSettingsButton,
+                            merge: true,
+                            child: OutlinedButton(
+                              onPressed: _openAndroidSettings,
+                              child: const Text('Open Android settings'),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text('Test notification', style: textTheme.bodyLarge),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Sends one in 10 seconds',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TestId(
+                    TestIds.settingsTestNotificationButton,
+                    merge: true,
+                    child: TextButton(
+                      onPressed: _sendTest,
+                      child: const Text('Send'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

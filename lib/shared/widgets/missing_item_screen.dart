@@ -33,8 +33,12 @@ class _MissingItemScreenState extends State<MissingItemScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      // The messenger is read before leaving, because by the time the new
+      // screen is up this one's context is on its way out and a snackbar
+      // asked for through it never appears on a real phone.
+      final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
       context.go(widget.goTo);
-      AppSnackbar.show(context, widget.message);
+      AppSnackbar.showOn(messenger, widget.message);
     });
   }
 

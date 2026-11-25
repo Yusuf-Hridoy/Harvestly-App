@@ -7,8 +7,11 @@ import '../shared/logic/app_clock.dart';
 import 'animal_models.dart';
 import 'farm_models.dart';
 import 'farm_storage.dart';
+import 'task_models.dart';
+import 'task_rules.dart';
 
-/// Holds the fields, crops and animal groups of the account that is logged in.
+/// Holds the fields, crops, animal groups and tasks of the logged-in
+/// account.
 ///
 /// Everything is kept on the phone as JSON in shared_preferences, under one
 /// key per account, through [FarmStorage]. Every change is saved at once, so
@@ -25,12 +28,24 @@ class FarmRepository extends ChangeNotifier {
   String? _accountId;
   List<Field> _fields = <Field>[];
   List<AnimalGroup> _animals = <AnimalGroup>[];
+  List<FarmTask> _tasks = <FarmTask>[];
   int _idCounter = 0;
   Future<void> _lastWrite = Future<void>.value();
+
+  /// Called whenever the loaded account's tasks change, with the account
+  /// email and its tasks.
+  ///
+  /// The app points this at the notification service, so reminders follow
+  /// every add, edit, delete, complete, snooze, reset, login and logout.
+  /// Nothing else in the data layer knows notifications exist.
+  void Function(String? email, List<FarmTask> tasks)? onRemindersChanged;
 
   /// The email of the account whose data is loaded, or null when nobody is
   /// logged in.
   String? get accountEmail => _accountEmail;
+
+  /// Every task of the logged-in account, in the order they were added.
+  List<FarmTask> get tasks => List<FarmTask>.unmodifiable(_tasks);
 
   /// Every field of the logged-in account, in the order they were added.
   List<Field> get fields => List<Field>.unmodifiable(_fields);
@@ -63,19 +78,53 @@ class FarmRepository extends ChangeNotifier {
     final FarmLoad load = _storage.load(email: email, accountId: accountId);
     _fields = load.snapshot.fields;
     _animals = load.snapshot.animals;
-    // A first run, a Phase 2 upgrade or a recovery is written back at once,
-    // so the next start reads the current version.
+    _tasks = load.snapshot.tasks;
+    // A first run, an upgrade from an older phase or a recovery is written
+    // back at once, so the next start reads the current version.
     if (load.needsSave) _write();
+    _remindersChanged();
+    notifyListeners();
+  }
+
+  /// Reads shared_preferences again, then the account's data.
+  ///
+  /// The app calls this when it comes back to the front, because a
+  /// notification button can change the saved data from another isolate
+  /// while the app is closed, and the app's own copy would not see it.
+  Future<void> reloadFromDisk() async {
+    await _storage.refresh();
+    reload();
+  }
+
+  /// Reads the account's data from storage again.
+  void reload() {
+    final String? email = _accountEmail;
+    final String? accountId = _accountId;
+    if (email == null || accountId == null) return;
+
+    final FarmLoad load = _storage.load(email: email, accountId: accountId);
+    _fields = load.snapshot.fields;
+    _animals = load.snapshot.animals;
+    _tasks = load.snapshot.tasks;
+    if (load.needsSave) _write();
+    // A notification button may have finished a repeating task while the
+    // app was shut, which makes a new task that needs its own reminder.
+    _remindersChanged();
     notifyListeners();
   }
 
   /// Forgets the loaded data. Called when the user logs out.
   void closeAccount() {
-    if (_accountEmail == null) return;
+    final String? email = _accountEmail;
+    if (email == null) return;
     _accountEmail = null;
     _accountId = null;
     _fields = <Field>[];
     _animals = <AnimalGroup>[];
+    _tasks = <FarmTask>[];
+    // An empty list means "cancel everything", so one account's reminders
+    // never fire while another is logged in.
+    onRemindersChanged?.call(email, const <FarmTask>[]);
     notifyListeners();
   }
 
@@ -176,8 +225,11 @@ class FarmRepository extends ChangeNotifier {
   }
 
   /// Removes a field, with every crop and past harvest in it.
+  ///
+  /// Tasks linked to it lose the link and become general tasks.
   Future<void> deleteField(String fieldId) async {
     _fields = _fields.where((Field field) => field.id != fieldId).toList();
+    _unlinkTasks(TaskLinkKind.field, fieldId);
     await _saveAndTell();
   }
 
@@ -254,7 +306,9 @@ class FarmRepository extends ChangeNotifier {
     final FarmSnapshot sample = FarmSnapshot.sample(accountId);
     _fields = sample.fields;
     _animals = sample.animals;
+    _tasks = sample.tasks;
     await _saveAndTell();
+    _remindersChanged();
   }
 
   // ---------------------------------------------------------------- animals
@@ -347,10 +401,13 @@ class FarmRepository extends ChangeNotifier {
   }
 
   /// Removes a group with every record in it.
+  ///
+  /// Tasks linked to it lose the link and become general tasks.
   Future<void> deleteGroup(String groupId) async {
     _animals = _animals
         .where((AnimalGroup group) => group.id != groupId)
         .toList();
+    _unlinkTasks(TaskLinkKind.group, groupId);
     await _saveAndTell();
   }
 
@@ -526,6 +583,221 @@ class FarmRepository extends ChangeNotifier {
     await _saveAndTell();
   }
 
+  // ------------------------------------------------------------------ tasks
+
+  /// The task with this id, or null when it was deleted or never existed.
+  FarmTask? taskById(String taskId) {
+    for (final FarmTask task in _tasks) {
+      if (task.id == taskId) return task;
+    }
+    return null;
+  }
+
+  /// The name of what a task is linked to, or "General" when it has none.
+  ///
+  /// A link to something that was deleted also reads "General".
+  String linkNameFor(FarmTask task) {
+    final TaskLink? link = task.link;
+    if (link == null) return TaskRules.generalName;
+    switch (link.kind) {
+      case TaskLinkKind.field:
+        return fieldById(link.id)?.name ?? TaskRules.generalName;
+      case TaskLinkKind.group:
+        return groupById(link.id)?.name ?? TaskRules.generalName;
+    }
+  }
+
+  /// The open tasks, in no particular order.
+  List<FarmTask> get openTasks =>
+      _tasks.where((FarmTask task) => task.isOpen).toList();
+
+  /// The tasks in one group of the Tasks list, already sorted.
+  ///
+  /// Done only holds tasks finished in the last 30 days.
+  List<FarmTask> tasksIn(TaskGroup group) {
+    final List<FarmTask> inGroup = _tasks
+        .where(
+          (FarmTask task) =>
+              TaskRules.groupOf(task) == group &&
+              (group != TaskGroup.done || TaskRules.showsUnderDone(task)),
+        )
+        .toList();
+    return TaskRules.sorted(inGroup, group);
+  }
+
+  /// How many open tasks are overdue, for the line on Home.
+  int get overdueCount => tasksIn(TaskGroup.overdue).length;
+
+  /// The tasks Home shows: the open ones due today by time, then the ones
+  /// already done today.
+  List<FarmTask> todayTasks({int limit = 3}) {
+    final DateTime today = AppClock.today();
+    final List<FarmTask> open = tasksIn(TaskGroup.today);
+    final List<FarmTask> doneToday =
+        _tasks
+            .where(
+              (FarmTask task) =>
+                  task.isDone && AppClock.dateOnly(task.doneAt!) == today,
+            )
+            .toList()
+          ..sort((FarmTask a, FarmTask b) => a.dueAt.compareTo(b.dueAt));
+    return <FarmTask>[...open, ...doneToday].take(limit).toList();
+  }
+
+  /// Adds a task and returns it, so the caller can open its detail screen.
+  Future<FarmTask> addTask({
+    required String title,
+    required String note,
+    required DateTime dueAt,
+    required Repeat repeat,
+    required TaskLink? link,
+    required ReminderOffset reminder,
+  }) async {
+    final FarmTask task = FarmTask(
+      id: _newId('task'),
+      title: title,
+      note: note,
+      dueAt: dueAt,
+      repeat: repeat,
+      link: link,
+      reminder: reminder,
+    );
+    _tasks = <FarmTask>[..._tasks, task];
+    await _saveAndTell();
+    _remindersChanged();
+    return task;
+  }
+
+  /// Changes a task. Editing always clears a snooze, because the user has
+  /// just said when they want it instead.
+  Future<void> editTask({
+    required String taskId,
+    required String title,
+    required String note,
+    required DateTime dueAt,
+    required Repeat repeat,
+    required TaskLink? link,
+    required ReminderOffset reminder,
+  }) async {
+    _replaceTask(
+      taskId,
+      (FarmTask task) => task.copyWith(
+        title: title,
+        note: note,
+        dueAt: dueAt,
+        repeat: repeat,
+        link: link,
+        clearLink: link == null,
+        reminder: reminder,
+        clearSnooze: true,
+      ),
+    );
+    await _saveAndTell();
+    _remindersChanged();
+  }
+
+  /// Removes a task and its reminder.
+  Future<void> deleteTask(String taskId) async {
+    _tasks = _tasks.where((FarmTask task) => task.id != taskId).toList();
+    await _saveAndTell();
+    _remindersChanged();
+  }
+
+  /// Marks a task done, and starts the next one when it repeats.
+  ///
+  /// The result says what to put back if the user taps Undo.
+  Future<TaskCompletion> completeTask(String taskId) async {
+    final FarmTask? task = taskById(taskId);
+    if (task == null || task.isDone) {
+      return const TaskCompletion(taskId: '', createdTaskId: null);
+    }
+
+    _replaceTask(
+      taskId,
+      (FarmTask t) => t.copyWith(doneAt: AppClock.now(), clearSnooze: true),
+    );
+
+    String? createdId;
+    if (task.repeats) {
+      final FarmTask next = FarmTask(
+        id: _newId('task'),
+        title: task.title,
+        note: task.note,
+        dueAt: TaskRules.nextDueAt(task.dueAt, task.repeat),
+        repeat: task.repeat,
+        link: task.link,
+        reminder: task.reminder,
+      );
+      createdId = next.id;
+      _tasks = <FarmTask>[..._tasks, next];
+    }
+
+    await _saveAndTell();
+    _remindersChanged();
+    return TaskCompletion(taskId: taskId, createdTaskId: createdId);
+  }
+
+  /// Puts a completion back: the task opens again and the task it started is
+  /// removed.
+  Future<void> undoComplete(TaskCompletion completion) async {
+    final String? createdId = completion.createdTaskId;
+    if (createdId != null) {
+      _tasks = _tasks.where((FarmTask task) => task.id != createdId).toList();
+    }
+    _replaceTask(
+      completion.taskId,
+      (FarmTask task) => task.copyWith(clearDone: true),
+    );
+    await _saveAndTell();
+    _remindersChanged();
+  }
+
+  /// Opens a done task again. A repeating task cannot be reopened, because
+  /// finishing it already made the next one.
+  Future<void> reopenTask(String taskId) async {
+    final FarmTask? task = taskById(taskId);
+    if (task == null || task.isOpen || task.repeats) return;
+    _replaceTask(taskId, (FarmTask t) => t.copyWith(clearDone: true));
+    await _saveAndTell();
+    _remindersChanged();
+  }
+
+  /// Pushes a task's reminder back to [until]. Used by the Snooze button.
+  Future<void> snoozeTask({
+    required String taskId,
+    required DateTime until,
+  }) async {
+    _replaceTask(taskId, (FarmTask task) => task.copyWith(snoozedUntil: until));
+    await _saveAndTell();
+    _remindersChanged();
+  }
+
+  /// Drops the link on every task that pointed at something now deleted.
+  void _unlinkTasks(TaskLinkKind kind, String id) {
+    _tasks = <FarmTask>[
+      for (final FarmTask task in _tasks)
+        if (task.link?.kind == kind && task.link?.id == id)
+          task.copyWith(clearLink: true)
+        else
+          task,
+    ];
+  }
+
+  void _replaceTask(String taskId, FarmTask Function(FarmTask task) change) {
+    _tasks = <FarmTask>[
+      for (final FarmTask task in _tasks)
+        if (task.id == taskId) change(task) else task,
+    ];
+  }
+
+  /// Asks for the reminders to be set again without changing any data.
+  ///
+  /// The task form calls this after the user allows notifications, because
+  /// the save happened while they were still off.
+  void refreshReminders() => _remindersChanged();
+
+  void _remindersChanged() => onRemindersChanged?.call(_accountEmail, tasks);
+
   void _replaceGroup(
     String groupId,
     AnimalGroup Function(AnimalGroup group) change,
@@ -564,7 +836,21 @@ class FarmRepository extends ChangeNotifier {
     if (email == null) return;
     await _storage.save(
       email: email,
-      snapshot: FarmSnapshot(fields: _fields, animals: _animals),
+      snapshot: FarmSnapshot(fields: _fields, animals: _animals, tasks: _tasks),
     );
   }
+}
+
+/// What completing a task did, so Undo can put it back.
+class TaskCompletion {
+  const TaskCompletion({required this.taskId, required this.createdTaskId});
+
+  /// The task that was marked done.
+  final String taskId;
+
+  /// The task a repeat started, or null when the task does not repeat.
+  final String? createdTaskId;
+
+  /// False when there was nothing to complete, so Undo has nothing to do.
+  bool get happened => taskId.isNotEmpty;
 }

@@ -75,13 +75,17 @@ void main() {
     expect(_styleOf(tester, title)?.decoration, TextDecoration.lineThrough);
   });
 
-  testWidgets('a task that starts ticked is struck through at once', (
+  // Phase 4 turned the Home tasks into real saved tasks, so this now reads
+  // a task that was really done today instead of a fixed flag. The poultry
+  // account is used because its two open tasks leave room for the done one;
+  // the farmer's three open tasks fill the card on their own.
+  testWidgets('a task done today is struck through', (
     WidgetTester tester,
   ) async {
-    await pumpHarvestlyApp(tester, startAccount: DemoAccounts.farmer);
+    await pumpHarvestlyApp(tester, startAccount: DemoAccounts.poultry);
 
     expect(
-      _styleOf(tester, 'Vitamin water for hens')?.decoration,
+      _styleOf(tester, 'Check the hatching tray')?.decoration,
       TextDecoration.lineThrough,
     );
   });
@@ -98,13 +102,14 @@ void main() {
     expect(find.text('Notifications come in a later phase.'), findsOneWidget);
   });
 
+  // Phase 4 replaced the Tasks placeholder with the real list.
   testWidgets('See all opens the Tasks tab', (WidgetTester tester) async {
     await pumpHarvestlyApp(tester, startAccount: DemoAccounts.farmer);
 
     await tester.tap(find.text('See all'));
     await tester.pumpAndSettle();
 
-    expect(find.text('This part comes in a later phase.'), findsOneWidget);
+    expect(byTestId(TestIds.tasksScreen), findsOneWidget);
   });
 
   testWidgets('Add your first field opens the Fields tab', (

@@ -4,7 +4,6 @@ import 'package:material_ui/material_ui.dart';
 import '../features/animals/animals_screen.dart';
 import '../features/animals/group_detail_screen.dart';
 import '../features/animals/group_form_screen.dart';
-import '../features/coming_soon/coming_soon_screen.dart';
 import '../features/crops/crop_detail_screen.dart';
 import '../features/crops/crop_form_screen.dart';
 import '../features/fields/field_detail_screen.dart';
@@ -15,17 +14,24 @@ import '../features/login/login_controller.dart';
 import '../features/login/login_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/shell/main_tabs_shell.dart';
-import '../shared/testing/test_ids.dart';
+import '../features/tasks/task_detail_screen.dart';
+import '../features/tasks/task_form_screen.dart';
+import '../features/tasks/tasks_screen.dart';
+import '../shared/widgets/app_snackbar.dart';
 import 'app_routes.dart';
+import 'deep_links.dart';
 
 export 'app_routes.dart';
 
 /// Builds the router.
 ///
-/// Not logged in: every route goes to /login.
-/// Logged in: /login goes to /home.
+/// Not logged in: every route goes to /login, remembering where the user was
+/// headed so a deep link still works after they log in.
+/// Logged in: /login goes there, or to /home when there is nowhere to go
+/// back to.
 GoRouter createAppRouter({
   required LoginController loginController,
+  GlobalKey<ScaffoldMessengerState>? messengerKey,
   String? initialLocation,
 }) {
   return GoRouter(
@@ -34,9 +40,30 @@ GoRouter createAppRouter({
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = loginController.isLoggedIn;
       final bool goingToLogin = state.matchedLocation == AppRoutes.login;
-      if (!loggedIn) return goingToLogin ? null : AppRoutes.login;
-      if (goingToLogin) return AppRoutes.home;
+
+      if (!loggedIn) {
+        if (goingToLogin) return null;
+        // A link opened while logged out waits at the login screen.
+        final String? from = DeepLinks.safePath(state.uri.toString());
+        return from == null ? AppRoutes.login : AppRoutes.loginFrom(from);
+      }
+
+      if (goingToLogin) {
+        // Anything unsafe in "from" is ignored and Home opens instead.
+        return DeepLinks.safePath(
+              state.uri.queryParameters[AppRoutes.fromQuery],
+            ) ??
+            AppRoutes.home;
+      }
       return null;
+    },
+
+    // A link to a path Harvestly does not have. Home opens instead, with
+    // a line saying why. No error screen is built, because putting one
+    // beside the tab shell would use the shell's key twice.
+    onException: (BuildContext context, GoRouterState state, GoRouter router) {
+      router.go(AppRoutes.home);
+      _sayBadLink(messengerKey);
     },
     routes: <RouteBase>[
       GoRoute(
@@ -62,19 +89,7 @@ GoRouter createAppRouter({
           ),
           StatefulShellBranch(routes: <RouteBase>[_fieldsRoute()]),
           StatefulShellBranch(routes: <RouteBase>[_animalsRoute()]),
-          StatefulShellBranch(
-            routes: <RouteBase>[
-              GoRoute(
-                path: AppRoutes.tasks,
-                builder: (BuildContext context, GoRouterState state) =>
-                    const ComingSoonScreen(
-                      testId: TestIds.tasksComingSoonScreen,
-                      title: 'Tasks',
-                      icon: Icons.task_alt_rounded,
-                    ),
-              ),
-            ],
-          ),
+          StatefulShellBranch(routes: <RouteBase>[_tasksRoute()]),
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
@@ -169,6 +184,59 @@ GoRoute _animalsRoute() {
     ],
   );
 }
+
+/// Says a link went nowhere, once there is a screen to say it on.
+///
+/// A link can arrive before the app has drawn anything, and then there is
+/// no messenger to show a snackbar on yet, so this waits a few frames for
+/// one instead of giving up on the first try.
+void _sayBadLink(
+  GlobalKey<ScaffoldMessengerState>? messengerKey, [
+  int tries = 0,
+]) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final ScaffoldMessengerState? messenger = messengerKey?.currentState;
+    if (messenger == null) {
+      if (tries < 20) _sayBadLink(messengerKey, tries + 1);
+      return;
+    }
+    AppSnackbar.showOn(messenger, DeepLinks.badLinkMessage);
+  });
+}
+
+/// The Tasks tab and everything inside it.
+///
+/// Child routes again, so the tab bar stays visible and the Tasks tab keeps
+/// its place.
+GoRoute _tasksRoute() {
+  return GoRoute(
+    path: AppRoutes.tasks,
+    builder: (BuildContext context, GoRouterState state) => const TasksScreen(),
+    routes: <RouteBase>[
+      // "new" comes first, so it is never read as a task id.
+      GoRoute(
+        path: 'new',
+        builder: (BuildContext context, GoRouterState state) =>
+            const TaskFormScreen(),
+      ),
+      GoRoute(
+        path: ':${AppRoutes.taskIdParam}',
+        builder: (BuildContext context, GoRouterState state) =>
+            TaskDetailScreen(taskId: _taskId(state)),
+        routes: <RouteBase>[
+          GoRoute(
+            path: 'edit',
+            builder: (BuildContext context, GoRouterState state) =>
+                TaskFormScreen(taskId: _taskId(state)),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+String _taskId(GoRouterState state) =>
+    state.pathParameters[AppRoutes.taskIdParam] ?? '';
 
 String _fieldId(GoRouterState state) =>
     state.pathParameters[AppRoutes.fieldIdParam] ?? '';

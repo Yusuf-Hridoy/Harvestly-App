@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resources the shrinker must not remove from a release build.
+
+     ic_stat_harvestly is only ever named as a string from Dart, when the
+     notification plugin is set up, so nothing in the Android code points at
+     it and the shrinker would otherwise throw it away. Without it a release
+     build fails on start with
+     "The resource ic_stat_harvestly could not be found". -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_harvestly" />

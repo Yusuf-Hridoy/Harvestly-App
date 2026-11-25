@@ -47,4 +47,23 @@ class AppRoutes {
 
   /// Edit one group.
   static String groupEdit(String groupId) => '/animals/$groupId/edit';
+
+  /// Add a task.
+  static const String taskNew = '/tasks/new';
+
+  /// The route parameter used inside the Tasks tab.
+  static const String taskIdParam = 'taskId';
+
+  /// The query that says where to go after logging in.
+  static const String fromQuery = 'from';
+
+  /// One task's detail screen.
+  static String taskDetail(String taskId) => '/tasks/$taskId';
+
+  /// Edit one task.
+  static String taskEdit(String taskId) => '/tasks/$taskId/edit';
+
+  /// The login screen, with the path to open once the user is in.
+  static String loginFrom(String path) =>
+      '$login?$fromQuery=${Uri.encodeComponent(path)}';
 }

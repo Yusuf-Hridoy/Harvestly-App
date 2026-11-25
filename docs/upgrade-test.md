@@ -1,11 +1,15 @@
-# Upgrade test: Phase 2 to Phase 3
+# Upgrade tests
+
+One section per release, newest last.
+
+## Phase 2 to Phase 3
 
 This checks that a real user who already had Harvestly keeps their fields and
 crops when they update, and gets the new animal groups without doing anything.
 
 Run it again whenever the saved data format changes.
 
-## What is being checked
+### What is being checked
 
 Phase 2 saved one key per account, `farm_data_<email>`, holding only fields:
 
@@ -24,7 +28,7 @@ exactly as they are, the account's sample animals are added, and the whole
 thing is written back as version 2 straight away. The rules live in
 `lib/data/farm_storage.dart` and are covered by `test/farm_storage_test.dart`.
 
-## Steps
+### Steps
 
 1. Remove any older copy:
 
@@ -52,7 +56,7 @@ thing is written back as version 2 straight away. The rules live in
    fields plus `Upgrade check` with its Radish, and Animals must show the 4
    sample groups.
 
-## Result: passed
+### Result: passed
 
 Run on 24 Nov 2026, emulator `Harvestly` (Android 16, API 36),
 Flutter 3.50.1.
@@ -79,7 +83,7 @@ What the dumps after the upgrade show:
 
 Nothing was lost, nothing had to be set up again, and no empty farm appeared.
 
-## Note on signing, and which APK was used
+### Note on signing, and which APK was used
 
 When this test was first run, neither APK could be installed over the other:
 
@@ -106,7 +110,7 @@ The release APK from
 was downloaded first and is kept outside the repository. It was installed and
 checked by hand as well, and it saves the same Phase 2 data.
 
-### The fix
+#### The fix
 
 Release builds now use one fixed key. `android/app/build.gradle.kts` reads it
 from `android/key.properties` if that file is there, and otherwise from the
@@ -125,3 +129,52 @@ README.
 
 From the next release on, a published APK can be installed straight over the
 one before it, so this test no longer needs a locally rebuilt old APK.
+
+## Phase 3 to Phase 4
+
+Phase 4 adds tasks, so the saved shape goes from version 2 to version 3:
+
+```json
+{ "schemaVersion": 3, "fields": [ ... ], "animals": [ ... ], "tasks": [ ... ] }
+```
+
+Version 2 data keeps its fields and its animal groups exactly as they are,
+and the account's sample tasks are added, because Phase 3 could not have any.
+Version 1 data, from Phase 2, gains both the animals and the tasks in one
+step. The rules live in `lib/data/farm_storage.dart` and are covered by
+`test/farm_storage_v3_test.dart`.
+
+Both APKs are signed with the real release key now, so `adb install -r`
+works with no signature error and nothing has to be rebuilt by hand. That was
+the whole point of the signing work between the two phases.
+
+### Steps
+
+1. `adb uninstall com.harvestly.app`
+2. `adb install harvestly-v0.3.0.apk`
+3. Log in as the farmer with **Remember me** on. Add a field named
+   `Upgrade check 4`, size `0.3`, soil `Loam`, and an animal group named
+   `Upgrade flock`, Hens, 5. Close the app and open it again.
+4. `adb install -r build/app/outputs/flutter-apk/app-release.apk`
+5. Open the app. It must still be logged in, the field and the group must
+   still be there, and the Tasks tab must show the sample tasks.
+
+### Result: passed
+
+Run on 25 Nov 2026, emulator `Harvestly` (Android 16, API 36),
+Flutter 3.50.1. Both APKs signed with certificate SHA-256
+`3f9c6f62…fbdcb`.
+
+| Step | What happened |
+| --- | --- |
+| 1 | `adb uninstall com.harvestly.app` → `Success` |
+| 2 | Phase 3 installed. `dumpsys` reported `versionName=0.3.0`, `versionCode=3`. The dump shows the Remember me box `checked="true"` |
+| 3 | Added `Upgrade check 4` (0.3 acre, Loam) and `Upgrade flock` (Hens, 5). Closed the app and reopened it: straight to Home, so Phase 3 had saved the session and both items |
+| 4 | `adb install -r ...app-release.apk` → `Success`, with **no signature error**. `dumpsys` then reported `versionName=0.4.0`, `versionCode=4` |
+| 5 | Still logged in. Fields read `5 fields` with `Upgrade check 4` and its `0.3 acre · Loam`. Animals showed `Upgrade flock` next to the 4 sample groups, chips `All 5`, `Birds 3`, `Goats 1`, `Cows 1`. Tasks, which the account could not have had before, showed `All 6`, `Fields 3`, `Animals 2`, `General 1` and the groups `Overdue · 1`, `Today · 3`, `Upcoming · 2`, `Done · 4` |
+
+The dumps are `docs/ui-dumps/upgrade_fields.xml`,
+`docs/ui-dumps/upgrade_field_detail.xml`, `docs/ui-dumps/upgrade_animals.xml`
+and `docs/ui-dumps/upgrade_tasks.xml`.
+
+Nothing was lost, nothing had to be set up again, and no empty farm appeared.

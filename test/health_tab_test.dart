@@ -142,30 +142,30 @@ void main() {
 
     await tester.tap(byTestId(TestIds.healthAddTaskButton));
     await tester.pumpAndSettle();
-    expect(byTestId(TestIds.taskFormScreen), findsOneWidget);
+    expect(byTestId(TestIds.healthTaskFormScreen), findsOneWidget);
 
-    await tester.tap(byTestId(TestIds.taskFormSaveButton));
+    await tester.tap(byTestId(TestIds.healthTaskFormSaveButton));
     await tester.pumpAndSettle();
     expect(
-      textOfTestId(tester, TestIds.taskFormTitleErrorText),
+      textOfTestId(tester, TestIds.healthTaskFormTitleErrorText),
       HealthTaskForm.titleEmptyError,
     );
 
-    await tester.enterText(byTestId(TestIds.taskFormTitleInput), 'A');
+    await tester.enterText(byTestId(TestIds.healthTaskFormTitleInput), 'A');
     await tester.pumpAndSettle();
-    await tester.tap(byTestId(TestIds.taskFormSaveButton));
+    await tester.tap(byTestId(TestIds.healthTaskFormSaveButton));
     await tester.pumpAndSettle();
     expect(
-      textOfTestId(tester, TestIds.taskFormTitleErrorText),
+      textOfTestId(tester, TestIds.healthTaskFormTitleErrorText),
       HealthTaskForm.titleLengthError,
     );
 
     await tester.enterText(
-      byTestId(TestIds.taskFormTitleInput),
+      byTestId(TestIds.healthTaskFormTitleInput),
       'Clean the pond',
     );
     await tester.pumpAndSettle();
-    await tester.tap(byTestId(TestIds.taskFormSaveButton));
+    await tester.tap(byTestId(TestIds.healthTaskFormSaveButton));
     await tester.pumpAndSettle();
 
     expect(find.text('Health task added.'), findsOneWidget);
@@ -192,9 +192,12 @@ void main() {
 
     await tester.tap(byTestId(TestIds.healthAddTaskButton));
     await tester.pumpAndSettle();
-    await tester.enterText(byTestId(TestIds.taskFormTitleInput), 'Half typed');
+    await tester.enterText(
+      byTestId(TestIds.healthTaskFormTitleInput),
+      'Half typed',
+    );
     await tester.pumpAndSettle();
-    await tester.tap(byTestId(TestIds.taskFormCancelButton));
+    await tester.tap(byTestId(TestIds.healthTaskFormCancelButton));
     await tester.pumpAndSettle();
 
     expect(byTestId(TestIds.discardDialog), findsOneWidget);

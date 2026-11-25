@@ -24,4 +24,45 @@ class AppSnackbar {
       ),
     );
   }
+
+  /// How long a snackbar with an action stays up.
+  static const Duration undoWait = Duration(seconds: 5);
+
+  /// Shows a message with one action button, such as Undo.
+  ///
+  /// It stays up for 5 seconds, which is long enough to read and tap.
+  static void showAction(
+    ScaffoldMessengerState messenger, {
+    required String message,
+    required String actionLabel,
+    required String actionTestId,
+    required VoidCallback onAction,
+  }) {
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        duration: undoWait,
+        // The button is part of the content rather than the snackbar's own
+        // action slot, because only a widget can carry a test ID.
+        content: Row(
+          children: <Widget>[
+            Expanded(
+              child: TestId(TestIds.appSnackbarText, child: Text(message)),
+            ),
+            TestId(
+              actionTestId,
+              merge: true,
+              child: TextButton(
+                onPressed: () {
+                  messenger.hideCurrentSnackBar();
+                  onAction();
+                },
+                child: Text(actionLabel),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

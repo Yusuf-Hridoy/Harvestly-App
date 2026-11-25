@@ -6,20 +6,27 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'animal_models.dart';
 import 'farm_models.dart';
 import 'sample_farm_data.dart';
+import 'task_models.dart';
 
-/// Everything one account has saved: its fields and its animal groups.
+/// Everything one account has saved: its fields, animal groups and tasks.
 class FarmSnapshot {
-  const FarmSnapshot({required this.fields, required this.animals});
+  const FarmSnapshot({
+    required this.fields,
+    required this.animals,
+    required this.tasks,
+  });
 
   /// The account's starting sample, used on the first run and by Reset
   /// demo data.
   factory FarmSnapshot.sample(String accountId) => FarmSnapshot(
     fields: SampleFarmData.startingFields(accountId),
     animals: SampleFarmData.startingGroups(accountId),
+    tasks: SampleFarmData.startingTasks(accountId),
   );
 
   final List<Field> fields;
   final List<AnimalGroup> animals;
+  final List<FarmTask> tasks;
 }
 
 /// Why a load ended up with the starting sample instead of saved data.
@@ -27,8 +34,8 @@ enum FarmLoadOutcome {
   /// Nothing was saved yet, so the account starts from its sample.
   firstRun,
 
-  /// Phase 2 data with no version. The fields were kept and sample animals
-  /// were added.
+  /// Data from an earlier phase. Everything saved was kept, and the parts
+  /// that phase could not have were filled in from the sample.
   migrated,
 
   /// Saved data at the current version, loaded as it was.
@@ -64,7 +71,7 @@ class FarmStorage {
   const FarmStorage(this._prefs);
 
   /// The version the app writes today.
-  static const int schemaVersion = 2;
+  static const int schemaVersion = 3;
 
   /// The start of the storage key. The account email is added to it.
   static const String keyPrefix = 'farm_data_';
@@ -126,6 +133,13 @@ class FarmStorage {
     }
   }
 
+  /// Reads shared_preferences again.
+  ///
+  /// A notification button can change the saved data from a background
+  /// isolate while the app is closed. The app's own copy does not see that
+  /// until it reads the store again, which is what this does.
+  Future<void> refresh() => _prefs.reload();
+
   /// Saves a snapshot at the current version.
   Future<void> save({
     required String email,
@@ -143,13 +157,17 @@ class FarmStorage {
     'animals': <Map<String, dynamic>>[
       for (final AnimalGroup group in snapshot.animals) group.toJson(),
     ],
+    'tasks': <Map<String, dynamic>>[
+      for (final FarmTask task in snapshot.tasks) task.toJson(),
+    ],
   });
 
   /// Brings saved data up to [schemaVersion].
   ///
-  /// Version 1 is Phase 2 data: fields only, with no version number. Its
-  /// fields are kept exactly as they are and the account's sample animals
-  /// are added, because Phase 2 could not have any.
+  /// Version 1 is Phase 2 data: fields only, with no version number.
+  /// Version 2 is Phase 3 data: fields and animal groups, no tasks.
+  /// Whatever the saved version has is kept exactly as it is, and only the
+  /// parts that version could not hold are filled in from the sample.
   FarmLoad _migrate({
     required Map<String, dynamic> json,
     required int version,
@@ -161,28 +179,31 @@ class FarmStorage {
         Field.fromJson(field as Map<String, dynamic>),
     ];
 
-    if (version < 2) {
-      return FarmLoad(
-        snapshot: FarmSnapshot(
-          fields: fields,
-          animals: SampleFarmData.startingGroups(accountId),
-        ),
-        outcome: FarmLoadOutcome.migrated,
-        needsSave: true,
-      );
-    }
+    // Phase 2 had no animal groups at all, so they come from the sample.
+    final List<AnimalGroup> animals = version < 2
+        ? SampleFarmData.startingGroups(accountId)
+        : <AnimalGroup>[
+            for (final dynamic group
+                in (json['animals'] as List<dynamic>? ?? const []))
+              AnimalGroup.fromJson(group as Map<String, dynamic>),
+          ];
+
+    // Phase 3 had no real tasks, so they come from the sample too.
+    final List<FarmTask> tasks = version < 3
+        ? SampleFarmData.startingTasks(accountId)
+        : <FarmTask>[
+            for (final dynamic task
+                in (json['tasks'] as List<dynamic>? ?? const []))
+              FarmTask.fromJson(task as Map<String, dynamic>),
+          ];
 
     return FarmLoad(
-      snapshot: FarmSnapshot(
-        fields: fields,
-        animals: <AnimalGroup>[
-          for (final dynamic group
-              in (json['animals'] as List<dynamic>? ?? const []))
-            AnimalGroup.fromJson(group as Map<String, dynamic>),
-        ],
-      ),
-      outcome: FarmLoadOutcome.loaded,
-      needsSave: false,
+      snapshot: FarmSnapshot(fields: fields, animals: animals, tasks: tasks),
+      outcome: version < schemaVersion
+          ? FarmLoadOutcome.migrated
+          : FarmLoadOutcome.loaded,
+      // Older data is written back at once, so the next start reads v3.
+      needsSave: version < schemaVersion,
     );
   }
 

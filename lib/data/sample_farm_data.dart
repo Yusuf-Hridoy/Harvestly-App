@@ -1,28 +1,7 @@
 import '../shared/logic/app_clock.dart';
 import 'animal_models.dart';
 import 'farm_models.dart';
-
-/// One job on today's list. Still sample text in Phase 2.
-class FarmTask {
-  const FarmTask({
-    required this.title,
-    required this.detail,
-    this.startsDone = false,
-    this.detailIsWarning = false,
-  });
-
-  /// What to do, for example "Water tomato beds".
-  final String title;
-
-  /// Where and when, for example "Field 2 - Morning".
-  final String detail;
-
-  /// Whether the task is already ticked when the screen opens.
-  final bool startsDone;
-
-  /// Whether the detail line is a warning and should use the warning color.
-  final bool detailIsWarning;
-}
+import 'task_models.dart';
 
 /// Today's weather line. Still sample text in Phase 2.
 class FarmWeather {
@@ -37,21 +16,16 @@ class FarmWeather {
 
 /// The parts of the home screen that are still sample values.
 ///
-/// Fields, crops, the harvest card, the eggs count and the animal health card
-/// now come from the saved farm data, so they are not in here any more.
+/// Fields, crops, the harvest card, the eggs count, the animal health card
+/// and, since Phase 4, the tasks all come from the saved farm data, so they
+/// are not in here any more.
 class FarmData {
-  const FarmData({
-    required this.weather,
-    required this.profitThisMonth,
-    this.tasks = const <FarmTask>[],
-  });
+  const FarmData({required this.weather, required this.profitThisMonth});
 
   final FarmWeather weather;
 
   /// Already formatted, for example "Tk 12,400".
   final String profitThisMonth;
-
-  final List<FarmTask> tasks;
 }
 
 /// Sample data for each demo account: the home screen values, and the fields
@@ -67,33 +41,11 @@ class SampleFarmData {
   static const FarmData farmer = FarmData(
     weather: _weather,
     profitThisMonth: 'Tk 12,400',
-    tasks: <FarmTask>[
-      FarmTask(title: 'Water tomato beds', detail: 'Field 2 · Morning'),
-      FarmTask(
-        title: 'Vitamin water for hens',
-        detail: 'Flock A',
-        startsDone: true,
-      ),
-      FarmTask(
-        title: 'Spray beans',
-        detail: 'Moved to Thursday because of rain',
-        detailIsWarning: true,
-      ),
-    ],
   );
 
   static const FarmData poultry = FarmData(
     weather: _weather,
     profitThisMonth: 'Tk 5,800',
-    tasks: <FarmTask>[
-      FarmTask(title: 'Collect eggs', detail: 'Flock A · Morning'),
-      FarmTask(title: 'Clean the water pots', detail: 'Coop'),
-      FarmTask(
-        title: 'Check the hatching tray',
-        detail: 'Batch 3',
-        startsDone: true,
-      ),
-    ],
   );
 
   static const FarmData newFarm = FarmData(
@@ -364,6 +316,127 @@ class SampleFarmData {
       tasks: <HealthTask>[
         HealthTask(id: 'task-1', title: 'Fowl pox vaccine', dueOn: _back(-3)),
       ],
+    ),
+  ];
+
+  /// A date and time counted from today, so the sample reads the same on
+  /// every run. [daysFromToday] is negative for the past.
+  static DateTime _at(int daysFromToday, int hour, int minute) {
+    final DateTime day = AppClock.today().add(Duration(days: daysFromToday));
+    return DateTime(day.year, day.month, day.day, hour, minute);
+  }
+
+  /// The tasks an account starts with, and goes back to when the user taps
+  /// Reset demo data.
+  static List<FarmTask> startingTasks(String accountId) {
+    switch (accountId) {
+      case 'farmer':
+        return _farmerTasks();
+      case 'poultry':
+        return _poultryTasks();
+      default:
+        return <FarmTask>[];
+    }
+  }
+
+  static TaskLink _field(String id) =>
+      TaskLink(kind: TaskLinkKind.field, id: id);
+
+  static TaskLink _group(String id) =>
+      TaskLink(kind: TaskLinkKind.group, id: id);
+
+  static List<FarmTask> _farmerTasks() => <FarmTask>[
+    FarmTask(
+      id: 'task-1',
+      title: 'Spray beans',
+      dueAt: _at(-2, 7, 0),
+      link: _field('field-3'),
+    ),
+    FarmTask(
+      id: 'task-2',
+      title: 'Water tomato beds',
+      dueAt: _at(0, 7, 0),
+      repeat: Repeat.daily,
+      link: _field('field-2'),
+    ),
+    FarmTask(
+      id: 'task-3',
+      title: 'Collect eggs',
+      dueAt: _at(0, 8, 0),
+      repeat: Repeat.daily,
+      link: _group('group-1'),
+    ),
+    FarmTask(
+      id: 'task-4',
+      title: 'Clean water pots',
+      note: 'Scrub the green off the sides',
+      dueAt: _at(0, 17, 0),
+      repeat: Repeat.weekly,
+      link: _group('group-2'),
+      reminder: ReminderOffset.hourBefore,
+    ),
+    FarmTask(
+      id: 'task-5',
+      title: 'Buy chicken feed',
+      dueAt: _at(2, 10, 0),
+      reminder: ReminderOffset.dayBefore,
+    ),
+    FarmTask(
+      id: 'task-6',
+      title: 'Check fence',
+      dueAt: _at(5, 9, 0),
+      repeat: Repeat.weekly,
+      link: _field('field-4'),
+    ),
+    FarmTask(
+      id: 'task-7',
+      title: 'Vitamin water for hens',
+      dueAt: _at(0, 7, 30),
+      link: _group('group-1'),
+      doneAt: _at(0, 7, 10),
+    ),
+    FarmTask(
+      id: 'task-8',
+      title: 'Weed Field 1',
+      dueAt: _at(-1, 9, 0),
+      link: _field('field-1'),
+      doneAt: _at(-1, 9, 0),
+    ),
+    FarmTask(
+      id: 'task-9',
+      title: 'Fix coop door',
+      dueAt: _at(-3, 16, 0),
+      link: _group('group-1'),
+      doneAt: _at(-3, 16, 0),
+    ),
+    FarmTask(
+      id: 'task-10',
+      title: 'Order seeds',
+      dueAt: _at(-6, 11, 0),
+      doneAt: _at(-6, 11, 0),
+    ),
+  ];
+
+  static List<FarmTask> _poultryTasks() => <FarmTask>[
+    FarmTask(
+      id: 'task-1',
+      title: 'Collect eggs',
+      dueAt: _at(0, 8, 0),
+      repeat: Repeat.daily,
+      link: _group('group-1'),
+    ),
+    FarmTask(
+      id: 'task-2',
+      title: 'Clean the water pots',
+      dueAt: _at(0, 16, 0),
+      link: _group('group-1'),
+    ),
+    FarmTask(
+      id: 'task-3',
+      title: 'Check the hatching tray',
+      dueAt: _at(0, 9, 0),
+      link: _group('group-1'),
+      doneAt: _at(0, 9, 0),
     ),
   ];
 }

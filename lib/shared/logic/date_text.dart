@@ -44,4 +44,27 @@ class DateText {
   /// "Tue 24 Nov", the line under the production chart.
   static String weekdayDayMonth(DateTime when) =>
       '${weekdayShort(when)} ${dayMonth(when)}';
+
+  /// "7:00 AM". Harvestly always shows times in 12-hour form.
+  static String timeOfDay(DateTime when) {
+    final int hour = when.hour % 12 == 0 ? 12 : when.hour % 12;
+    final String minute = when.minute.toString().padLeft(2, '0');
+    return '$hour:$minute ${when.hour < 12 ? 'AM' : 'PM'}';
+  }
+
+  /// "1st", "2nd", "3rd", "25th": the day of the month in words.
+  static String ordinalDay(int day) {
+    // 11th, 12th and 13th break the pattern, so they are checked first.
+    if (day >= 11 && day <= 13) return '${day}th';
+    switch (day % 10) {
+      case 1:
+        return '${day}st';
+      case 2:
+        return '${day}nd';
+      case 3:
+        return '${day}rd';
+      default:
+        return '${day}th';
+    }
+  }
 }

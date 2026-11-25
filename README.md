@@ -1,8 +1,9 @@
 # Harvestly
 
 Harvestly is a small farm manager app for Android: fields, crops, flocks and
-herds, eggs and milk, tasks and money. It is a practice app for mobile test automation with Appium,
-not a real product. Every element a test needs has a stable test ID.
+herds, eggs and milk, tasks with real Android reminders, and money. It is a
+practice app for mobile test automation with Appium, not a real product.
+Every element a test needs has a stable test ID.
 
 ## Screenshots
 
@@ -25,6 +26,12 @@ not a real product. Every element a test needs has a stable test ID.
 | Health tab | ![Health tab, light](docs/screenshots/health-tab-light.png) | ![Health tab, dark](docs/screenshots/health-tab-dark.png) |
 | Milk tab | ![Milk tab, light](docs/screenshots/milk-tab-light.png) | ![Milk tab, dark](docs/screenshots/milk-tab-dark.png) |
 | Breeding tab | ![Breeding tab, light](docs/screenshots/breeding-tab-light.png) | ![Breeding tab, dark](docs/screenshots/breeding-tab-dark.png) |
+| Tasks list | ![Tasks list, light](docs/screenshots/tasks-list-light.png) | ![Tasks list, dark](docs/screenshots/tasks-list-dark.png) |
+| Task form | ![Task form, light](docs/screenshots/task-form-light.png) | ![Task form, dark](docs/screenshots/task-form-dark.png) |
+| Task detail | ![Task detail, light](docs/screenshots/task-detail-light.png) | ![Task detail, dark](docs/screenshots/task-detail-dark.png) |
+| Reminder explainer | ![Reminder explainer, light](docs/screenshots/reminder-explainer-light.png) | ![Reminder explainer, dark](docs/screenshots/reminder-explainer-dark.png) |
+| Settings, notifications | ![Settings notifications, light](docs/screenshots/settings-notifications-light.png) | ![Settings notifications, dark](docs/screenshots/settings-notifications-dark.png) |
+| A reminder in the shade | ![Reminder in the shade](docs/screenshots/notification-shade.png) | |
 
 ## Download the app
 
@@ -95,6 +102,46 @@ health. One screen serves both: only the three tabs change.
   done tasks and losses. Record loss takes animals off the count.
 - Home adds up today's eggs across every flock and shows the one health task
   that needs attention most.
+
+## Tasks and reminders
+
+The Tasks tab holds the real jobs on the farm, in four groups: Overdue,
+Today, Upcoming, and a Done list that is folded away until you tap it. Chips
+narrow the list to the tasks on a field, on an animal group, or on neither.
+
+A task has a due date and time, an optional note, a repeat of daily, weekly
+or monthly, and a reminder at the due time, an hour before or a day before.
+Finishing a repeating task makes the next one straight away, keeping the same
+day of the month where that fits. A checkbox or a swipe to the right finishes
+a task, and Undo takes it back for a few seconds.
+
+Reminders are real Android notifications. The first time you save a task with
+one, Harvestly explains why before Android asks, and the task is kept
+whatever you answer. A reminder carries two buttons, **Mark done** and
+**Snooze 1 hour**, and both work with the app closed. Reminders are
+deliberately inexact, so Harvestly needs no alarm permission and a reminder
+may arrive a few minutes late. They survive a restart.
+
+Settings has a Notifications part that reads Android's real answer, with a
+way into Android's own page when they are off, and a test notification that
+arrives 10 seconds later.
+
+## Deep links
+
+A link that starts with `harvestly://app/` opens a screen from outside the
+app, which is how a notification, `adb` or an Appium test can jump straight
+to one:
+
+```
+adb shell am start -W -a android.intent.action.VIEW \
+  -d "harvestly://app/tasks/task-4" com.harvestly.app
+```
+
+Home, the Fields and Animals lists, one field, one group with a tab, the
+Tasks list and one task all have a link. Anything else opens Home and says
+the link does not work. Logged out, the link waits at the login screen and
+opens once you are in. The full list is in
+[test_ids.md](test_ids.md#deep-links).
 
 ## Safe upgrades
 
@@ -244,8 +291,10 @@ lib/
   main.dart                  app start: loads saved settings, runs the app
   app/                       MaterialApp, router, colors, themes
   data/                      the 3 demo accounts, the crop catalog, the animal
-                             rules, the saved farm data with its version and
-                             migration, and the starting sample
+                             and task rules, the saved farm data with its
+                             version and migration, and the starting sample
+  notifications/             the reminder service, the Mark done and Snooze
+                             handlers, and the bridge to Android's settings
   features/
     login/                   login screen and its controller
     fields/                  the Fields tab, the field form, field detail and
@@ -253,10 +302,11 @@ lib/
     crops/                   add a crop, crop detail and the harvest dialog
     animals/                 the Animals tab, the group form, group detail and
                              its Eggs, Milk, Hatching, Breeding and Health tabs
+    tasks/                   the Tasks tab, the task form, task detail, the
+                             link picker and the reminder explainer
     shell/                   the bottom tab bar around the 5 tabs
     home/                    home screen and its cards
-    coming_soon/             placeholder for Tasks, the last one left
-    settings/                the More tab and the theme choice
+    settings/                the More tab, the theme choice and notifications
   shared/
     session/                 remember me and the logged-in account
     logic/                   today's date, date text, crop growth and field
@@ -269,7 +319,8 @@ assets/fonts/                Inter and Space Grotesk, with their licences
 test/                        widget tests
 docs/screenshots/            the screenshots above
 docs/ui-dumps/               Android UI tree dumps, one per screen
-docs/upgrade-test.md         how the Phase 2 to Phase 3 upgrade was checked
+docs/upgrade-test.md         how each upgrade was checked on a real phone
+android/app/src/main/kotlin/ MainActivity and its small settings channel
 ```
 
 ## Roadmap
@@ -277,7 +328,7 @@ docs/upgrade-test.md         how the Phase 2 to Phase 3 upgrade was checked
 - Phase 1 - Foundation (done)
 - Phase 2 - Fields and crops (done)
 - Phase 3 - Animals and poultry (done)
-- Phase 4 - Tasks and reminders
+- Phase 4 - Tasks and reminders (done)
 - Phase 5 - Camera and diary
 - Phase 6 - Money, weather and offline
 - Phase 7 - Testing gym

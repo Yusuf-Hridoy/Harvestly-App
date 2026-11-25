@@ -112,7 +112,7 @@ class _HealthTaskFormState extends State<HealthTaskForm> {
           title: const Text('Add health task'),
         ),
         body: TestId(
-          TestIds.taskFormScreen,
+          TestIds.healthTaskFormScreen,
           container: true,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
@@ -127,7 +127,7 @@ class _HealthTaskFormState extends State<HealthTaskForm> {
                 child: Text('Task name', style: textTheme.titleSmall),
               ),
               TestId(
-                TestIds.taskFormTitleInput,
+                TestIds.healthTaskFormTitleInput,
                 child: TextField(
                   controller: _title,
                   textInputAction: TextInputAction.done,
@@ -145,7 +145,7 @@ class _HealthTaskFormState extends State<HealthTaskForm> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(2, 6, 0, 0),
                   child: TestId(
-                    TestIds.taskFormTitleErrorText,
+                    TestIds.healthTaskFormTitleErrorText,
                     child: Text(
                       _titleError!,
                       style: textTheme.bodySmall?.copyWith(color: colors.error),
@@ -158,7 +158,7 @@ class _HealthTaskFormState extends State<HealthTaskForm> {
                 child: Text('Due date', style: textTheme.titleSmall),
               ),
               TestId(
-                TestIds.taskFormDateInput,
+                TestIds.healthTaskFormDateInput,
                 merge: true,
                 child: OutlinedButton.icon(
                   onPressed: _pickDate,
@@ -172,7 +172,7 @@ class _HealthTaskFormState extends State<HealthTaskForm> {
               ),
               const SizedBox(height: 24),
               TestId(
-                TestIds.taskFormSaveButton,
+                TestIds.healthTaskFormSaveButton,
                 merge: true,
                 child: FilledButton(
                   onPressed: _save,
@@ -181,7 +181,7 @@ class _HealthTaskFormState extends State<HealthTaskForm> {
               ),
               const SizedBox(height: 10),
               TestId(
-                TestIds.taskFormCancelButton,
+                TestIds.healthTaskFormCancelButton,
                 merge: true,
                 child: OutlinedButton(
                   onPressed: _leave,

@@ -62,9 +62,6 @@ class TestIds {
   /// Shown instead of the task rows when the account has no tasks today.
   static const String homeTasksEmptyText = 'home_tasks_empty_text';
 
-  // Placeholder tabs. Fields became a real screen in Phase 2.
-  static const String tasksComingSoonScreen = 'tasks_coming_soon_screen';
-
   // More tab (Settings).
   static const String settingsScreen = 'settings_screen';
   static const String settingsAccountNameText = 'settings_account_name_text';
@@ -489,12 +486,18 @@ class TestIds {
   static String healthHistoryItem(int number) => 'health_history_item_$number';
 
   // Health task form and loss dialog.
-  static const String taskFormScreen = 'task_form_screen';
-  static const String taskFormTitleInput = 'task_form_title_input';
-  static const String taskFormTitleErrorText = 'task_form_title_error_text';
-  static const String taskFormDateInput = 'task_form_date_input';
-  static const String taskFormSaveButton = 'task_form_save_button';
-  static const String taskFormCancelButton = 'task_form_cancel_button';
+  //
+  // These were named task_form_* in Phase 3. Phase 4 added a task form of
+  // its own in the Tasks tab, so the health one moved to health_task_form_*
+  // and the plain names now belong to the Tasks form.
+  static const String healthTaskFormScreen = 'health_task_form_screen';
+  static const String healthTaskFormTitleInput = 'health_task_form_title_input';
+  static const String healthTaskFormTitleErrorText =
+      'health_task_form_title_error_text';
+  static const String healthTaskFormDateInput = 'health_task_form_date_input';
+  static const String healthTaskFormSaveButton = 'health_task_form_save_button';
+  static const String healthTaskFormCancelButton =
+      'health_task_form_cancel_button';
   static const String lossDialog = 'loss_dialog';
   static const String lossDialogAmountInput = 'loss_dialog_amount_input';
   static const String lossDialogAmountErrorText =
@@ -531,6 +534,139 @@ class TestIds {
       'home_animal_health_title_text';
   static const String homeAnimalHealthStateText =
       'home_animal_health_state_text';
+
+  // ================================================================ Phase 4
+  // Tasks, reminders and deep links.
+
+  // Tasks tab.
+  static const String tasksScreen = 'tasks_screen';
+  static const String tasksAddButton = 'tasks_add_button';
+  static const String tasksFilterAllChip = 'tasks_filter_all_chip';
+  static const String tasksFilterFieldsChip = 'tasks_filter_fields_chip';
+  static const String tasksFilterAnimalsChip = 'tasks_filter_animals_chip';
+  static const String tasksFilterGeneralChip = 'tasks_filter_general_chip';
+  static const String tasksOverdueHeader = 'tasks_overdue_header';
+  static const String tasksTodayHeader = 'tasks_today_header';
+  static const String tasksUpcomingHeader = 'tasks_upcoming_header';
+  static const String tasksDoneToggle = 'tasks_done_toggle';
+  static const String tasksEmptyState = 'tasks_empty_state';
+  static const String tasksEmptyAddButton = 'tasks_empty_add_button';
+  static const String tasksFilterEmptyText = 'tasks_filter_empty_text';
+
+  /// The Undo action inside the "Marked as done." snackbar.
+  static const String tasksUndoButton = 'tasks_undo_button';
+
+  /// Task row `number` inside one group, counting from 1 down the screen.
+  ///
+  /// `group` is overdue, today, upcoming or done. A task that moves group
+  /// gets a different ID, which is expected.
+  static String tasksItem(String group, int number) =>
+      'tasks_${group}_item_$number';
+
+  /// The title of task row `number` in `group`.
+  static String tasksItemTitle(String group, int number) =>
+      '${tasksItem(group, number)}_title_text';
+
+  /// The line under the title of task row `number` in `group`.
+  static String tasksItemLine(String group, int number) =>
+      '${tasksItem(group, number)}_line_text';
+
+  /// The checkbox of task row `number` in `group`.
+  static String tasksItemCheckbox(String group, int number) =>
+      '${tasksItem(group, number)}_checkbox';
+
+  /// The repeat icon of task row `number`, only there when it repeats.
+  static String tasksItemRepeatIcon(String group, int number) =>
+      '${tasksItem(group, number)}_repeat_icon';
+
+  /// The bell of task row `number`, only there when it has a reminder.
+  static String tasksItemReminderIcon(String group, int number) =>
+      '${tasksItem(group, number)}_reminder_icon';
+
+  // Add and edit task form.
+  static const String taskFormScreen = 'task_form_screen';
+  static const String taskFormTitleText = 'task_form_title_text';
+  static const String taskFormNameInput = 'task_form_name_input';
+  static const String taskFormNameErrorText = 'task_form_name_error_text';
+  static const String taskFormNoteInput = 'task_form_note_input';
+  static const String taskFormNoteCounterText = 'task_form_note_counter_text';
+  static const String taskFormDateInput = 'task_form_date_input';
+  static const String taskFormTimeInput = 'task_form_time_input';
+  static const String taskFormRepeatNoneChip = 'task_form_repeat_none_chip';
+  static const String taskFormRepeatDailyChip = 'task_form_repeat_daily_chip';
+  static const String taskFormRepeatWeeklyChip = 'task_form_repeat_weekly_chip';
+  static const String taskFormRepeatMonthlyChip =
+      'task_form_repeat_monthly_chip';
+  static const String taskFormLinkInput = 'task_form_link_input';
+  static const String taskFormReminderNoneChip = 'task_form_reminder_none_chip';
+  static const String taskFormReminderAtDueChip =
+      'task_form_reminder_at_due_chip';
+  static const String taskFormReminderHourBeforeChip =
+      'task_form_reminder_hour_before_chip';
+  static const String taskFormReminderDayBeforeChip =
+      'task_form_reminder_day_before_chip';
+  static const String taskFormReminderLineText = 'task_form_reminder_line_text';
+  static const String taskFormReminderErrorText =
+      'task_form_reminder_error_text';
+  static const String taskFormSaveButton = 'task_form_save_button';
+  static const String taskFormCancelButton = 'task_form_cancel_button';
+
+  // Link picker sheet.
+  static const String linkPickerSheet = 'link_picker_sheet';
+  static const String linkPickerNoneOption = 'link_picker_none_option';
+
+  /// One field row in the link picker, by field id.
+  static String linkPickerFieldOption(String fieldId) =>
+      'link_picker_field_option_$fieldId';
+
+  /// One animal group row in the link picker, by group id.
+  static String linkPickerGroupOption(String groupId) =>
+      'link_picker_group_option_$groupId';
+
+  // Task detail.
+  static const String taskDetailScreen = 'task_detail_screen';
+  static const String taskDetailTitleText = 'task_detail_title_text';
+  static const String taskDetailDueChip = 'task_detail_due_chip';
+  static const String taskDetailEditButton = 'task_detail_edit_button';
+  static const String taskDetailLinkCard = 'task_detail_link_card';
+  static const String taskDetailLinkNameText = 'task_detail_link_name_text';
+  static const String taskDetailLinkOpenButton = 'task_detail_link_open_button';
+  static const String taskDetailRepeatText = 'task_detail_repeat_text';
+  static const String taskDetailReminderText = 'task_detail_reminder_text';
+  static const String taskDetailNoteText = 'task_detail_note_text';
+  static const String taskDetailDoneButton = 'task_detail_done_button';
+  static const String taskDetailReopenButton = 'task_detail_reopen_button';
+  static const String taskDetailRepeatLockedText =
+      'task_detail_repeat_locked_text';
+  static const String taskDetailDeleteButton = 'task_detail_delete_button';
+
+  // Delete task dialog.
+  static const String deleteTaskDialog = 'delete_task_dialog';
+  static const String deleteTaskDialogMessageText =
+      'delete_task_dialog_message_text';
+  static const String deleteTaskDialogCancelButton =
+      'delete_task_dialog_cancel_button';
+  static const String deleteTaskDialogConfirmButton =
+      'delete_task_dialog_confirm_button';
+
+  // Reminder explainer sheet, shown before Android's permission pop-up.
+  static const String reminderExplainerSheet = 'reminder_explainer_sheet';
+  static const String reminderExplainerContinueButton =
+      'reminder_explainer_continue_button';
+  static const String reminderExplainerNotNowButton =
+      'reminder_explainer_not_now_button';
+
+  // Home, the overdue line on the tasks card.
+  static const String homeTasksOverdueText = 'home_tasks_overdue_text';
+
+  // Settings, the Notifications part.
+  static const String settingsNotificationsCard = 'settings_notifications_card';
+  static const String settingsNotificationsStateText =
+      'settings_notifications_state_text';
+  static const String settingsOpenAndroidSettingsButton =
+      'settings_open_android_settings_button';
+  static const String settingsTestNotificationButton =
+      'settings_test_notification_button';
 
   // Shared.
   static const String appSnackbarText = 'app_snackbar_text';

@@ -73,16 +73,6 @@ The "UI tree" column is what the ID looked like in the dumps in `docs/ui-dumps/`
 | `home_empty_farm_card` | Home | Welcome card | `View` | Only for `new@harvestly.test`. |
 | `home_empty_add_field_button` | Home | Add your first field | `Button`, clickable | Opens the Fields tab. |
 
-## Placeholder tabs
-
-Fields became a real screen in Phase 2 and Animals in Phase 3, so
-`fields_coming_soon_screen` and `animals_coming_soon_screen` are gone. Tasks
-is the last placeholder.
-
-| ID | Screen | Element | UI tree | Notes |
-| --- | --- | --- | --- | --- |
-| `tasks_coming_soon_screen` | Tasks | Whole screen | `View` with the text | "This part comes in a later phase." |
-
 ## More (Settings)
 
 | ID | Screen | Element | UI tree | Notes |
@@ -517,14 +507,19 @@ first steps may be off to the left and out of the tree until it is scrolled.
 
 ## Health task form and loss dialog
 
+**These six IDs were renamed in Phase 4.** They were `task_form_*` in
+Phase 3. Phase 4 gave the Tasks tab a task form of its own, and two screens
+cannot share an ID, so the health one moved to `health_task_form_*` and the
+plain names now belong to the Tasks form.
+
 | ID | Screen | Element | UI tree | Notes |
 | --- | --- | --- | --- | --- |
-| `task_form_screen` | Task form | Whole screen | `View` | A pushed screen, not a route. |
-| `task_form_title_input` | Task form | Task name | `EditText`, clickable | 2 to 40 characters. |
-| `task_form_title_error_text` | Task form | Name error | `View` with the text | |
-| `task_form_date_input` | Task form | Due date | `Button`, clickable | 365 days back to 365 days ahead. A past date is how a late task is made. |
-| `task_form_save_button` | Task form | Save task | `Button`, clickable | Snackbar: "Health task added." |
-| `task_form_cancel_button` | Task form | Cancel | `Button`, clickable | |
+| `health_task_form_screen` | Health task form | Whole screen | `View` | A pushed screen, not a route. Was `task_form_screen`. |
+| `health_task_form_title_input` | Health task form | Task name | `EditText`, clickable | 2 to 40 characters. Was `task_form_title_input`. |
+| `health_task_form_title_error_text` | Health task form | Name error | `View` with the text | Was `task_form_title_error_text`. |
+| `health_task_form_date_input` | Health task form | Due date | `Button`, clickable | 365 days back to 365 days ahead. Was `task_form_date_input`. |
+| `health_task_form_save_button` | Health task form | Save task | `Button`, clickable | Snackbar: "Health task added." Was `task_form_save_button`. |
+| `health_task_form_cancel_button` | Health task form | Cancel | `Button`, clickable | Was `task_form_cancel_button`. |
 | `loss_dialog` | Loss dialog | Whole dialog | `View` | Title "Record loss". |
 | `loss_dialog_amount_input` | Loss dialog | How many | `EditText`, clickable | 1 up to the group's count. |
 | `loss_dialog_amount_error_text` | Loss dialog | Amount error | `View` with the text | "You only have 24 birds." when it is too many. |
@@ -571,7 +566,8 @@ children at all; `home_farmer_phase3_scrolled.xml` shows all three IDs.
 ## Notes for Phase 3 testers
 
 - **The date pickers still have no custom IDs.** `group_form_date_input`,
-  `batch_form_date_input`, `pregnancy_form_date_input`, `task_form_date_input`,
+  `batch_form_date_input`, `pregnancy_form_date_input`,
+  `health_task_form_date_input`, `task_form_date_input`,
   `birth_dialog_date_input`, `loss_dialog_date_input` and
   `past_day_dialog_date_input` all open Flutter's own `showDatePicker`. Inside
   it, find things by content description: "Switch to input", "Previous month",
@@ -588,3 +584,278 @@ children at all; `home_farmer_phase3_scrolled.xml` shows all three IDs.
 - **Every date in the sample is counted back from today**, so the day numbers,
   days left and averages are the same on every run. The start dates on the
   group cards are fixed.
+
+## Tasks list
+
+The rows are numbered inside their own group, starting at 1, in the order
+they are drawn. `<group>` is `overdue`, `today`, `upcoming` or `done`, so the
+first row under Today is `tasks_today_item_1`. **A task gets a different ID
+when it moves group.** Finishing the first Today task makes it
+`tasks_done_item_1`, and what was `tasks_today_item_2` becomes
+`tasks_today_item_1`. Find a task by its title through
+`tasks_<group>_item_<n>_title_text` rather than trusting a number to stay put.
+
+| ID | Screen | Element | UI tree | Notes |
+| --- | --- | --- | --- | --- |
+| `tasks_screen` | Tasks | Whole screen | `View` | |
+| `tasks_add_button` | Tasks | Plus in the app bar | `Button`, clickable | Opens Add task. |
+| `tasks_filter_all_chip` | Tasks | All chip | `Button`, clickable | Text is "All 6": the label and the count of open tasks. |
+| `tasks_filter_fields_chip` | Tasks | Fields chip | `Button`, clickable | Open tasks linked to a field. |
+| `tasks_filter_animals_chip` | Tasks | Animals chip | `Button`, clickable | Open tasks linked to an animal group. |
+| `tasks_filter_general_chip` | Tasks | General chip | `Button`, clickable | Open tasks with no link. |
+| `tasks_overdue_header` | Tasks | Overdue heading | `View` with the text | "Overdue · 1", in the warning colour. Hidden when empty. |
+| `tasks_today_header` | Tasks | Today heading | `View` with the text | "Today · 3". Hidden when empty. |
+| `tasks_upcoming_header` | Tasks | Upcoming heading | `View` with the text | "Upcoming · 2". Hidden when empty. |
+| `tasks_done_toggle` | Tasks | Done heading | `Button`, clickable | "Done · 4". Folded to start; tapping opens and closes the list. |
+| `tasks_<group>_item_<n>` | Tasks | One row | `View` | Tapping it opens Task detail. |
+| `tasks_<group>_item_<n>_title_text` | Tasks | Row title | `View` with the text | Struck through on a done row. |
+| `tasks_<group>_item_<n>_line_text` | Tasks | Row line | `View` with the text | "Field 2 · South bed · 7:00 AM". Overdue rows are in the warning colour. |
+| `tasks_<group>_item_<n>_checkbox` | Tasks | Row checkbox | `CheckBox`, clickable | Completes an open task, reopens a plain done one. |
+| `tasks_<group>_item_<n>_repeat_icon` | Tasks | Repeat icon | `View` | **Only there when the task repeats.** |
+| `tasks_<group>_item_<n>_reminder_icon` | Tasks | Bell | `View` | **Only there when the task has a reminder.** |
+| `tasks_empty_state` | Tasks | Empty card | `View` | Only when the account has no tasks at all. |
+| `tasks_empty_add_button` | Tasks | Add task | `Button`, clickable | Inside the empty card. |
+| `tasks_filter_empty_text` | Tasks | No-result line | `View` with the text | "Nothing here. Try another filter." Only when the chosen chip has no open tasks. |
+| `tasks_undo_button` | Snackbar | Undo | `Button`, clickable | Inside the "Marked as done." snackbar, for about 5 seconds. |
+
+**Swipe right to complete.** A swipe from the left edge of a row towards the
+right finishes the task, with a soft secondary background and "Done" showing
+under it as it moves. A swipe left does nothing. Done rows do not swipe at
+all. The row is never really removed: completing it moves it to the Done
+group, so the row count under Today drops by one and `tasks_done_toggle`
+counts one more.
+
+**Undo.** Both the checkbox and the swipe show "Marked as done." with
+`tasks_undo_button`. Undo reopens the task, and for a repeating task also
+deletes the task that finishing it had just created.
+
+## Task form (add and edit)
+
+| ID | Screen | Element | UI tree | Notes |
+| --- | --- | --- | --- | --- |
+| `task_form_screen` | Task form | Whole screen | `View` | Route `/tasks/new` or `/tasks/<id>/edit`. |
+| `task_form_title_text` | Task form | App bar title | `View` with the text | "Add task" or "Edit task". |
+| `task_form_name_input` | Task form | Task | `EditText`, clickable | 2 to 60 characters. |
+| `task_form_name_error_text` | Task form | Name error | `View` with the text | "Please enter a task." / "Use 2 to 60 characters." |
+| `task_form_note_input` | Task form | Note | `EditText`, clickable | Up to 200 characters, 3 lines. |
+| `task_form_note_counter_text` | Task form | Note counter | `View` with the text | "14 / 200", updated as you type. |
+| `task_form_date_input` | Task form | Due date | `Button`, clickable | "25 Nov". 365 days back to 365 ahead. A past date is how an overdue task is made. |
+| `task_form_time_input` | Task form | Time | `Button`, clickable | "9:00 AM". Opens Flutter's time picker. |
+| `task_form_repeat_none_chip` | Task form | None | `Button`, clickable | Picked to start. |
+| `task_form_repeat_daily_chip` | Task form | Daily | `Button`, clickable | |
+| `task_form_repeat_weekly_chip` | Task form | Weekly | `Button`, clickable | |
+| `task_form_repeat_monthly_chip` | Task form | Monthly | `Button`, clickable | |
+| `task_form_link_input` | Task form | Linked to | `Button`, clickable | Shows "General", or the name with a "Fields" or "Animals" tag. Opens the link picker. |
+| `task_form_reminder_none_chip` | Task form | None | `Button`, clickable | Picked to start. |
+| `task_form_reminder_at_due_chip` | Task form | At due time | `Button`, clickable | |
+| `task_form_reminder_hour_before_chip` | Task form | 1 hour before | `Button`, clickable | |
+| `task_form_reminder_day_before_chip` | Task form | 1 day before | `Button`, clickable | |
+| `task_form_reminder_line_text` | Task form | Reminder line | `View` with the text | "Reminder on Wed 25 Nov at 4:00 PM". **Only there once a reminder is picked**, and it follows the date, the time and the chip. |
+| `task_form_reminder_error_text` | Task form | Reminder error | `View` with the text | "This reminder time has already passed." |
+| `task_form_save_button` | Task form | Save task | `Button`, clickable | "Task added." or "Task updated." |
+| `task_form_cancel_button` | Task form | Cancel | `Button`, clickable | Asks "Discard your changes?" when something was changed. |
+
+**The form is longer than one screen.** With the keyboard up, the save and
+cancel buttons and often the reminder chips are below the fold. Scroll the
+form before looking for them, and start the swipe inside the form's own
+bounds: with the keyboard up the scrollable ends around y=1500 on a
+1080 x 2400 screen, and a swipe starting lower lands on the keyboard and does
+nothing.
+
+## Link picker sheet
+
+| ID | Screen | Element | UI tree | Notes |
+| --- | --- | --- | --- | --- |
+| `link_picker_sheet` | Link picker | Whole sheet | `View` | Title "Linked to". |
+| `link_picker_none_option` | Link picker | None | `View`, clickable | Makes it a general task. |
+| `link_picker_field_option_<fieldId>` | Link picker | One field | `View`, clickable | For example `link_picker_field_option_field-2`. Fields are listed A to Z. |
+| `link_picker_group_option_<groupId>` | Link picker | One group | `View`, clickable | For example `link_picker_group_option_group-1`. Groups are listed A to Z. |
+
+The headings "Fields" and "Animals" carry no IDs, and the same two words are
+on the tab bar behind the sheet, so look for them inside `link_picker_sheet`
+and nowhere else. A sheet with no fields or no groups leaves that heading out.
+
+## Task detail
+
+| ID | Screen | Element | UI tree | Notes |
+| --- | --- | --- | --- | --- |
+| `task_detail_screen` | Task detail | Whole screen | `View` | Route `/tasks/<id>`. |
+| `task_detail_title_text` | Task detail | Title | `View` with the text | Space Grotesk. |
+| `task_detail_due_chip` | Task detail | Due chip | `View` with the text | "Today · 5:00 PM", "Fri 27 Nov · 10:00 AM", "Late by 2 days" in the warning colour, or "Done Wed 25 Nov". |
+| `task_detail_edit_button` | Task detail | Pencil | `Button`, clickable | Opens Edit task. |
+| `task_detail_link_card` | Task detail | Linked card | `View` | **Only there when the task is linked.** |
+| `task_detail_link_name_text` | Task detail | Linked name | `View` with the text | "Duck pond · 6 birds" or "Field 2 · South bed · 0.4 acre". |
+| `task_detail_link_open_button` | Task detail | Open | `Button`, clickable | Opens that field or group. |
+| `task_detail_repeat_text` | Task detail | Repeat | `View` with the text | "Does not repeat", "Every day", "Every week, on Wed", "Every month, on the 25th". |
+| `task_detail_reminder_text` | Task detail | Reminder | `View` with the text | "4:00 PM, 1 hour before", "Snoozed until 5:00 PM" or "None". |
+| `task_detail_note_text` | Task detail | Note | `View` with the text | **Only there when the task has a note.** |
+| `task_detail_done_button` | Task detail | Mark as done | `Button`, clickable | Only on an open task. |
+| `task_detail_reopen_button` | Task detail | Mark as not done | `Button`, clickable | Only on a done task that does not repeat. |
+| `task_detail_repeat_locked_text` | Task detail | Why no reopen | `View` with the text | Only on a done repeating task: "Repeating tasks can't be reopened. The next one is already in your list." |
+| `task_detail_delete_button` | Task detail | Delete task | `Button`, clickable | Opens the delete dialog. |
+
+Exactly one of `task_detail_done_button`, `task_detail_reopen_button` and
+`task_detail_repeat_locked_text` is on screen at a time.
+
+## Delete task dialog and the reminder explainer
+
+| ID | Screen | Element | UI tree | Notes |
+| --- | --- | --- | --- | --- |
+| `delete_task_dialog` | Delete dialog | Whole dialog | `View` | Title "Delete this task?". |
+| `delete_task_dialog_message_text` | Delete dialog | Message | `View` with the text | "Clean water pots will be removed. You can't undo this." |
+| `delete_task_dialog_cancel_button` | Delete dialog | Cancel | `Button`, clickable | |
+| `delete_task_dialog_confirm_button` | Delete dialog | Delete | `Button`, clickable | Cancels the reminder, goes to the list, snackbar "Task deleted." |
+| `reminder_explainer_sheet` | Explainer | Whole sheet | `View` | "Turn on reminders?". Only on Android 13 and up, and only before the first time Android's own pop-up is shown. |
+| `reminder_explainer_continue_button` | Explainer | Continue | `Button`, clickable | Then Android's pop-up opens. |
+| `reminder_explainer_not_now_button` | Explainer | Not now | `Button`, clickable | Keeps the task, books nothing, and the sheet shows again next time. |
+
+## Home and Settings, Phase 4
+
+| ID | Screen | Element | UI tree | Notes |
+| --- | --- | --- | --- | --- |
+| `home_tasks_overdue_text` | Home | Overdue line | `Button`, clickable | "1 overdue task" / "3 overdue tasks", in the warning colour. **Only there when something is late.** Tapping it opens the Tasks tab. |
+| `settings_notifications_card` | More | Notifications card | `View` | Above Appearance. |
+| `settings_notifications_state_text` | More | State | `View` with the text | "Notifications are on", "Notifications are off" in the warning colour, or "Notifications are not set up yet". |
+| `settings_open_android_settings_button` | More | Open Android settings | `Button`, clickable | **Only there when notifications are off.** Opens Android's own page for Harvestly. |
+| `settings_test_notification_button` | More | Send | `Button`, clickable | Snackbar "Test notification on its way." |
+
+The Phase 1 Home task IDs are unchanged and now sit on real tasks:
+`home_tasks_card`, `home_tasks_see_all_link`, `home_tasks_empty_text`,
+`home_task_item_<n>` and `home_task_checkbox_<n>`. Home shows up to three
+tasks due today, the open ones by time first and then the ones already done
+today.
+
+## System UI
+
+Android's permission pop-up and the notification shade are drawn by the
+system, so nothing in them carries a Harvestly ID. What tests can rely on,
+taken from dumps on this emulator (Android 16, API 36):
+
+**The notification permission pop-up** — `docs/ui-dumps/system_permission.xml`,
+package `com.google.android.permissioncontroller`:
+
+| What | How to find it |
+| --- | --- |
+| The dialog | `com.android.permissioncontroller:id/grant_dialog` |
+| The question | `com.android.permissioncontroller:id/permission_message`, text "Allow Harvestly to send you notifications?" |
+| Allow | `com.android.permissioncontroller:id/permission_allow_button`, text "Allow" |
+| Don't allow | `com.android.permissioncontroller:id/permission_deny_button`, text "Don't allow" |
+
+The two button IDs are the stable part; the words change with the phone's
+language, and the apostrophe in "Don't allow" is a right single quote
+(U+2019), not a plain one.
+
+**The notification shade** — `docs/ui-dumps/notification_shade.xml`. Open it
+with `adb shell cmd statusbar expand-notifications`, then dump. A Harvestly
+reminder reads:
+
+| What | Text |
+| --- | --- |
+| App name | "Harvestly" |
+| Title | The task title, for example "Clean water pots" |
+| Text | "Duck pond · due at 5:00 PM", or "General · due at 5:00 PM" |
+| First button | "Mark done" |
+| Second button | "Snooze 1 hour" |
+
+The test notification has the title "Test reminder", the text "Notifications
+are working." and **no buttons**.
+
+## Deep links
+
+Links that start with `harvestly://app/` open a screen from outside the app.
+The host is always `app`, because Flutter hands the router only the path of a
+link: in `harvestly://tasks/12` the word `tasks` would be read as the host and
+lost, while in `harvestly://app/tasks/12` the path is `/tasks/12`, which is
+already a route.
+
+| Link | Opens |
+| --- | --- |
+| `harvestly://app/home` | Home |
+| `harvestly://app/fields` | The Fields list |
+| `harvestly://app/fields/<fieldId>` | That field |
+| `harvestly://app/animals` | The Animals list |
+| `harvestly://app/animals/<groupId>` | That group, on its first tab |
+| `harvestly://app/animals/<groupId>?tab=health` | That group, on its Health tab |
+| `harvestly://app/tasks` | The Tasks list |
+| `harvestly://app/tasks/<taskId>` | That task |
+
+Run one with:
+
+```
+adb shell am start -W -a android.intent.action.VIEW -d "harvestly://app/tasks/task-4" com.harvestly.app
+```
+
+- Any other path opens Home with the snackbar "That link doesn't work."
+- An ID that is gone falls back the way that kind already does: a missing
+  task goes to `/tasks` with "That task no longer exists.", a missing field to
+  `/fields`, a missing group to `/animals`.
+- A link cannot open a form. `harvestly://app/tasks/new` is refused like any
+  other unknown path.
+- Links work with the app closed and with it in the background.
+- **Logged out, the link waits.** The router goes to
+  `/login?from=%2Ftasks%2Ftask-4` and opens that screen once the login works.
+  A `from` that is not one of the links above is ignored and Home opens.
+
+## Notes for Phase 4 testers
+
+- **A busy Tasks screen can break `uiautomator dump`.** With the Done list
+  open the tree runs to around 85 nodes, and at that size the dump quietly
+  comes back without the snackbar on top: `tasks_undo_button` and
+  `app_snackbar_text` are simply missing, however fast the dump is taken,
+  while a screenshot shows the snackbar plainly. Folding Done first takes the
+  tree to about 56 nodes and the snackbar appears on the first try. Appium's
+  own page source goes through the same uiautomator service, so fold Done, or
+  use a narrower chip, before looking for anything transient there.
+- **The time picker needs care from a test.** `task_form_time_input` opens
+  Flutter's own `showTimePicker`, which has no custom IDs. Find things in it
+  by content description: "Switch to text input mode", "Switch to dial picker
+  mode", "AM", "PM", "Cancel" and "OK". In typing mode the hour and the
+  minute are the two `android.widget.EditText` nodes, and three things catch
+  tests out: the keyboard moves the dialog, so find the minute box again
+  after typing the hour or the tap lands on the scrim and closes the picker;
+  the minute box never really empties, since a delete leaves a `0`; and it
+  holds two digits, so a second typed digit is refused. Typing one digit `D`
+  into an emptied minute box lands on `D0`, which means whole tens are the
+  easy case and anything else needs the dial. Check the form afterwards:
+  `task_form_time_input` reads the time that was really set.
+- **A force-stopped app gets no reminders.** `adb shell am force-stop` puts
+  the app in Android's stopped state, which cancels its alarms until someone
+  opens it again. Swiping it off the recents list does not. Use
+  `adb shell am kill com.harvestly.app` when a test needs the app closed but
+  its reminders still live.
+- **Reminders are inexact, so they can be late.** Harvestly asks for no
+  exact-alarm permission on purpose, and schedules with
+  `inexactAllowWhileIdle`. A reminder usually lands within a minute on an
+  emulator but Android may hold it for several; allow about ten minutes
+  before calling one missing.
+- **The test notification only arrives if the app stays open.** Settings ›
+  Send waits 10 seconds inside the app and then shows it. Swiping Harvestly
+  away during those 10 seconds means nothing is sent. Tapping it opens Home.
+  Holding the notification shade open through those 10 seconds also stops it:
+  the activity pauses and the wait pauses with it. Wait with the shade shut,
+  then open it.
+- **A reminder you have not read stays in the shade.** Opening Harvestly
+  books the reminders again, but that only clears the ones still waiting. A
+  reminder already on screen is left where it is, so a test can open the
+  app, look around, and still press **Mark done** or **Snooze 1 hour**
+  afterwards. A shown reminder is taken away only when its task has moved
+  on: finished, deleted, its reminder turned off, moved to a later time,
+  renamed or relinked, or belonging to an account that is no longer logged
+  in. Logging out clears every one.
+- **The two buttons work with the app closed.** Mark done and Snooze 1 hour
+  run on a background isolate that reads and writes shared_preferences
+  directly. The app reads the store again when it next comes to the front, so
+  a change made from the shade shows the moment the app is opened.
+- **Android only asks once.** After Don't allow, Harvestly never shows the
+  pop-up again; the explainer stops appearing too and Settings reads
+  "Notifications are off" with an Open Android settings button. To get back
+  to a fresh state, `adb shell pm clear com.harvestly.app` or reinstall.
+- **Saved data is at version 3 now.** The account key `farm_data_<email>`
+  holds `{"schemaVersion": 3, "fields": [...], "animals": [...],
+  "tasks": [...]}`. Phase 2 and Phase 3 data is upgraded the first time
+  Phase 4 opens it, keeping everything that was there. See
+  `docs/upgrade-test.md`.
+- **The Done fold goes back to closed when the app closes.** It survives
+  opening a task and coming back, but not a restart.
+- **Every date in the sample is counted from today**, so the groups, the
+  counts and the "Late by" numbers read the same on every run.

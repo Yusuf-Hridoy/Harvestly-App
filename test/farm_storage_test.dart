@@ -75,11 +75,11 @@ void main() {
     ]);
   });
 
-  test('the upgrade is written back as version 2 at once', () async {
+  test('the upgrade is written back as version 3 at once', () async {
     await openWith(phase2Json);
 
     final Map<String, dynamic> saved = await savedJson();
-    expect(saved['schemaVersion'], 2);
+    expect(saved['schemaVersion'], 3);
     expect((saved['fields'] as List<dynamic>), hasLength(1));
     expect((saved['animals'] as List<dynamic>), hasLength(4));
   });
@@ -96,12 +96,12 @@ void main() {
     expect(prefs.getString(FarmStorage.backupKeyFor(email)), broken);
 
     final Map<String, dynamic> saved = await savedJson();
-    expect(saved['schemaVersion'], 2);
+    expect(saved['schemaVersion'], 3);
   });
 
   test('a newer version is backed up and the sample is loaded', () async {
     const String fromTheFuture =
-        '{"schemaVersion":3,"fields":[],"animals":[],"barns":[]}';
+        '{"schemaVersion":4,"fields":[],"animals":[],"barns":[]}';
     final FarmRepository repository = await openWith(fromTheFuture);
 
     expect(repository.fields, hasLength(4));

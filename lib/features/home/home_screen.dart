@@ -10,10 +10,12 @@ import '../../data/demo_accounts.dart';
 import '../../data/farm_models.dart';
 import '../../data/farm_repository.dart';
 import '../../data/sample_farm_data.dart';
+import '../../data/task_models.dart';
 import '../../shared/testing/test_id_wrapper.dart';
 import '../../shared/testing/test_ids.dart';
 import '../../shared/widgets/app_snackbar.dart';
 import '../login/login_controller.dart';
+import '../tasks/tasks_screen.dart';
 import 'widgets/animal_health_card.dart';
 import 'widgets/empty_farm_card.dart';
 import 'widgets/harvest_soon_card.dart';
@@ -21,8 +23,8 @@ import 'widgets/stat_card.dart';
 import 'widgets/today_tasks_card.dart';
 import 'widgets/weather_card.dart';
 
-/// The Home tab. The fields, crops and animals are real data; the money,
-/// weather and tasks are still sample values.
+/// The Home tab. The fields, crops, animals and tasks are real data; only
+/// the money and the weather are still sample values.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -37,21 +39,28 @@ class _HomeScreenState extends State<HomeScreen> {
   static const int _fieldsTabIndex = 1;
   static const int _tasksTabIndex = 3;
 
-  List<bool> _done = <bool>[];
-  String? _loadedForAccount;
-
-  void _loadTicks(FarmData data, String accountId) {
-    if (_loadedForAccount == accountId) return;
-    _loadedForAccount = accountId;
-    _done = data.tasks.map((FarmTask t) => t.startsDone).toList();
-  }
-
   Future<void> _refresh() async {
     await Future<void>.delayed(HomeScreen.refreshWait);
   }
 
   void _openTab(int index) {
     StatefulNavigationShell.of(context).goBranch(index);
+  }
+
+  /// What a task's checkbox on Home does, or null when it is off.
+  ///
+  /// Same rules as the Tasks list: a done repeating task cannot be
+  /// reopened, because finishing it already made the next one.
+  VoidCallback? _checkboxFor(FarmTask task) {
+    if (task.isDone && task.repeats) return null;
+    return () async {
+      if (task.isDone) {
+        await context.read<FarmRepository>().reopenTask(task.id);
+        return;
+      }
+      if (!mounted) return;
+      await TasksScreen.completeWithUndo(context, task);
+    };
   }
 
   @override
@@ -61,7 +70,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final FarmRepository repository = context.watch<FarmRepository>();
     final FarmData data = SampleFarmData.forAccount(account.id);
-    _loadTicks(data, account.id);
 
     final AppColorSet colors = context.colors;
     final DateTime now = DateTime.now();
@@ -72,7 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // The welcome card is only for an account that has nothing at all yet.
     final bool farmIsEmpty =
-        fields.isEmpty && repository.animals.isEmpty && data.tasks.isEmpty;
+        fields.isEmpty &&
+        repository.animals.isEmpty &&
+        repository.tasks.isEmpty;
 
     return Scaffold(
       body: TestId(
@@ -112,9 +122,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: AppSizes.gap),
                     TodayTasksCard(
-                      tasks: data.tasks,
-                      doneFlags: _done,
-                      onToggle: (int i) => setState(() => _done[i] = !_done[i]),
+                      tasks: repository.todayTasks(),
+                      overdueCount: repository.overdueCount,
+                      linkNameOf: repository.linkNameFor,
+                      onToggle: _checkboxFor,
+                      onOpenTask: (FarmTask task) =>
+                          context.go(AppRoutes.taskDetail(task.id)),
+                      onOpenOverdue: () => _openTab(_tasksTabIndex),
                       onSeeAll: () => _openTab(_tasksTabIndex),
                     ),
                     if (health != null) ...<Widget>[

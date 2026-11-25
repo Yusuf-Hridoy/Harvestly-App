@@ -57,12 +57,17 @@ if (releaseKey == null) {
 
 android {
     namespace = "com.harvestly.app"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_local_notifications 23 is built against SDK 37, so the app has
+    // to compile against it too. The target SDK stays on Flutter default.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Needed by flutter_local_notifications so scheduled reminders work
+        // on older Android versions.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -101,6 +106,10 @@ android {
             }
         }
     }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 kotlin {
